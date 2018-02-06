@@ -1,1 +1,1 @@
-# cse496dl_group
+# CSE 496 : Deep-Learning Homework Group!
