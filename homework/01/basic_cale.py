@@ -1,9 +1,10 @@
+
 import tensorflow as tf 
 import numpy as np
 import os
 
 flags = tf.app.flags
-flags.DEFINE_string('data_dir', '/work/cse496dl/shared/hackathon/02/mnist/', 'directory where MNIST is located')
+flags.DEFINE_string('data_dir', '/work/cse496dl/shared/homework/01/', 'directory where MNIST is located')
 flags.DEFINE_string('save_dir', 'hackathon_3', 'directory where model graph and weights are saved')
 flags.DEFINE_integer('batch_size', 32, '')
 flags.DEFINE_integer('max_epoch_num', 100, '')
@@ -31,23 +32,30 @@ def split_data(data, labels, proportion):
     split_idx = int(proportion * size)
     return (data[s[:split_idx]], data[s[split_idx:]], labels[s[:split_idx]], labels[s[split_idx:]])
 
+def transform_labels(labels):
+    new_labels = []
+    for l in labels:
+        t_label = np.zeros(10)
+        t_label[(int(l)-1)] = 1.
+        new_labels.append(t_label)
+    return np.array(new_labels)
+
+
 def main(argv):
     # load data
-    train_images = np.load(FLAGS.data_dir + 'mnist_train_images.npy')
-    train_labels = np.load(FLAGS.data_dir + 'mnist_train_labels.npy')
-    test_images = np.load(FLAGS.data_dir + 'mnist_test_images.npy')
-    test_labels = np.load(FLAGS.data_dir + 'mnist_test_labels.npy')
+    train_images = np.load(FLAGS.data_dir + 'fmnist_train_data.npy')
+    train_labels = transform_labels(np.load(FLAGS.data_dir + 'fmnist_train_labels.npy'))
 
     # split into train and validate
-    ## TODO
+  
     sp_data = split_data(train_images, train_labels, .90)
     validation_images = sp_data[0]
     train_images = sp_data[1]
     validation_labels = sp_data[2]
     train_labels = sp_data[3]
+
     validation_num_examples = validation_images.shape[0]
     train_num_examples = train_images.shape[0]
-    test_num_examples = test_images.shape[0]
     
     # specify the network
     x = tf.placeholder(tf.float32, [None, 784], name='data')
@@ -109,39 +117,39 @@ def main(argv):
             print('VALIDATION CROSS ENTROPY: ' + str(avg_validation_ce))
 
             # report mean test loss
-            ce_vals = []
-            conf_mxs = []
-            for i in range(test_num_examples // batch_size):
-                batch_xs = test_images[i*batch_size:(i+1)*batch_size, :]
-                batch_ys = test_labels[i*batch_size:(i+1)*batch_size, :]
-                test_ce, conf_matrix = session.run([red_mean, confusion_matrix_op], {x: batch_xs, y: batch_ys})
-                ce_vals.append(test_ce)
-                conf_mxs.append(conf_matrix)
-            avg_test_ce = sum(ce_vals) / len(ce_vals)
-            print('TEST CROSS ENTROPY: ' + str(avg_test_ce))
-            print('TEST CONFUSION MATRIX:')
-            print(str(sum(conf_mxs)))
+            #ce_vals = []
+            #conf_mxs = []
+            #for i in range(test_num_examples // batch_size):
+            #    batch_xs = test_images[i*batch_size:(i+1)*batch_size, :]
+            #    batch_ys = test_labels[i*batch_size:(i+1)*batch_size, :]
+            #    test_ce, conf_matrix = session.run([red_mean, confusion_matrix_op], {x: batch_xs, y: batch_ys})
+            #    ce_vals.append(test_ce)
+            #    conf_mxs.append(conf_matrix)
+            #avg_test_ce = sum(ce_vals) / len(ce_vals)
+            #print('TEST CROSS ENTROPY: ' + str(avg_test_ce))
+            #print('TEST CONFUSION MATRIX:')
+            #print(str(sum(conf_mxs)))
 
             if avg_validation_ce < min_validation_ce:
                 min_validation_ce = avg_validation_ce
                 best_epoch = epoch
                 best_train_ce = avg_train_ce
-                best_test_ce = avg_test_ce
-                best_conf_mxs = sum(conf_mxs)
+                #best_test_ce = avg_test_ce
+                #best_conf_mxs = sum(conf_mxs)
                 best_model = saver.save(session, os.path.join(FLAGS.save_dir, "mnist_inference"), global_step=global_step_tensor)
                 count = 0
             else:
-                count++
+                count += 1
+            
             if count > 12 :
                 break
 
         print("EPOCH: " + str(best_epoch) +
               "\nTRAIN LOSS: " + str(best_train_ce) +
-              "\nVALIDATION LOSS: " + str(min_validation_ce) +
-              "\nTEST LOSS: " + str(best_test_ce) +
-              "\nCONFUSION MATRIX: " + str(best_conf_mxs))
+              "\nVALIDATION LOSS: " + str(min_validation_ce))
+        #      "\nTEST LOSS: " + str(best_test_ce) +
+        #      "\nCONFUSION MATRIX: " + str(best_conf_mxs))
 
-        path_prefix = saver.save(session, os.path.join(FLAGS.save_dir, "mnist_inference"), global_step=global_step_tensor)
 
 if __name__ == "__main__":
     tf.app.run()
