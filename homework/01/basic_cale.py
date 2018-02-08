@@ -58,9 +58,9 @@ def main(argv):
     train_num_examples = train_images.shape[0]
     
     # specify the network
-    x = tf.placeholder(tf.float32, [None, 784], name='data')
+    input_placeholder = tf.placeholder(tf.float32, [None, 784], name='data')
     with tf.name_scope('linear_model') as scope:
-        hidden = tf.layers.dense(x,
+        hidden = tf.layers.dense(input_placeholder,
                                  400,
                                  kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
                                  bias_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
@@ -102,7 +102,7 @@ def main(argv):
             for i in range(train_num_examples // batch_size):
                 batch_xs = train_images[i*batch_size:(i+1)*batch_size, :]
                 batch_ys = train_labels[i*batch_size:(i+1)*batch_size, :]       
-                _, train_ce = session.run([train_op, red_mean], {x: batch_xs, y: batch_ys})
+                _, train_ce = session.run([train_op, red_mean], {input_placeholder: batch_xs, y: batch_ys})
                 ce_vals.append(train_ce)
             avg_train_ce = sum(ce_vals) / len(ce_vals)
             print('TRAIN CROSS ENTROPY: ' + str(avg_train_ce))
@@ -111,7 +111,7 @@ def main(argv):
             for i in range(validation_num_examples // batch_size):
                 batch_xs = validation_images[i*batch_size:(i+1)*batch_size, :]
                 batch_ys = validation_labels[i*batch_size:(i+1)*batch_size, :]       
-                validate_ce,_ = session.run([red_mean, y], {x: batch_xs, y: batch_ys})
+                validate_ce,_ = session.run([red_mean, y], {input_placeholder: batch_xs, y: batch_ys})
                 ce_vals.append(validate_ce)
             avg_validation_ce = sum(ce_vals) / len(ce_vals)
             print('VALIDATION CROSS ENTROPY: ' + str(avg_validation_ce))
