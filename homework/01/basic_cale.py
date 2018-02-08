@@ -57,19 +57,39 @@ def main(argv):
     validation_num_examples = validation_images.shape[0]
     train_num_examples = train_images.shape[0]
     
+
     # specify the network
     input_placeholder = tf.placeholder(tf.float32, [None, 784], name='data')
+    input_norm = input_placeholder/255
+    KEEP_PROB = 0.8
+
     with tf.name_scope('linear_model') as scope:
-        hidden = tf.layers.dense(input_placeholder,
-                                 400,
-                                 kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
-                                 bias_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
+        dropped_input = tf.layers.dropout(x_norm, KEEP_PROB)
+        hidden_1 = tf.layers.dense(input_placeholder,
+                                 500,
+                                 kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5.),
+                                 bias_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5),
                                  activation=tf.nn.relu,
-                                 name='hidden_layer')
-        output = tf.layers.dense(hidden,
+                                 name='hidden_layer_1')
+        dropped_hidden_1 = tf.layers.dropout(hidden_1, KEEP_PROB)
+        hidden_2 = tf.layers.dense(dropped_hidden_1,
+                                 300,
+                                 kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5),
+                                 bias_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5),
+                                 activation=tf.nn.relu,
+                                 name='hidden_layer_2')
+        dropped_hidden_2 = tf.layers.dropout(hidden_2, KEEP_PROB)
+        hidden_3 = tf.layers.dense(dropped_hidden_2,
+                                 100,
+                                 kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5),
+                                 bias_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5),
+                                 activation=tf.nn.relu,
+                                 name='hidden_layer_3')
+        dropped_hidden_3 = tf.layers.dropout(hidden_3, KEEP_PROB)
+        output = tf.layers.dense(dropped_hidden_3,
                                  10,
-                                 kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
-                                 bias_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
+                                 kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5),
+                                 bias_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5),
                                  name='output_layer')
         tf.identity(output, name='model_output')
 
@@ -92,7 +112,7 @@ def main(argv):
 
         # run training
         batch_size = FLAGS.batch_size
-        min_validation_ce = 1.0
+        min_validation_ce = float("inf")
         count = 0
         for epoch in range(FLAGS.max_epoch_num):
             print('Epoch: ' + str(epoch))
@@ -108,11 +128,13 @@ def main(argv):
             print('TRAIN CROSS ENTROPY: ' + str(avg_train_ce))
 
             ce_vals = []
+            conf_mxs = []
             for i in range(validation_num_examples // batch_size):
                 batch_xs = validation_images[i*batch_size:(i+1)*batch_size, :]
                 batch_ys = validation_labels[i*batch_size:(i+1)*batch_size, :]       
-                validate_ce,_ = session.run([red_mean, y], {input_placeholder: batch_xs, y: batch_ys})
+                validate_ce, conf_matrix= session.run([red_mean, confusion_matrix_op], {input_placeholder: batch_xs, y: batch_ys})
                 ce_vals.append(validate_ce)
+                conf_mxs.append(conf_matrix)
             avg_validation_ce = sum(ce_vals) / len(ce_vals)
             print('VALIDATION CROSS ENTROPY: ' + str(avg_validation_ce))
 
