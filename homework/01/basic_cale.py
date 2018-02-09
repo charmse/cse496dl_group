@@ -61,43 +61,31 @@ def main(argv):
     # specify the network
     input_placeholder = tf.placeholder(tf.float32, [None, 784], name='data')
     input_norm = input_placeholder/255
-    KEEP_PROB = 0.8
+    KEEP_PROB = 0.5
 
-    with tf.name_scope('linear_model') as scope:
-        dropped_input = tf.layers.dropout(x_norm, KEEP_PROB)
-        hidden_1 = tf.layers.dense(input_placeholder,
-                                 500,
-                                 kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5.),
-                                 bias_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5),
-                                 activation=tf.nn.relu,
-                                 name='hidden_layer_1')
-        dropped_hidden_1 = tf.layers.dropout(hidden_1, KEEP_PROB)
-        hidden_2 = tf.layers.dense(dropped_hidden_1,
-                                 300,
-                                 kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5),
-                                 bias_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5),
-                                 activation=tf.nn.relu,
-                                 name='hidden_layer_2')
-        dropped_hidden_2 = tf.layers.dropout(hidden_2, KEEP_PROB)
-        hidden_3 = tf.layers.dense(dropped_hidden_2,
-                                 100,
-                                 kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5),
-                                 bias_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5),
-                                 activation=tf.nn.relu,
-                                 name='hidden_layer_3')
-        dropped_hidden_3 = tf.layers.dropout(hidden_3, KEEP_PROB)
-        output = tf.layers.dense(dropped_hidden_3,
-                                 10,
-                                 kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5),
-                                 bias_regularizer=tf.contrib.layers.l2_regularizer(scale=0.5),
-                                 name='output_layer')
-        tf.identity(output, name='model_output')
+    
+    dropped_input = tf.layers.dropout(input_norm, KEEP_PROB)
+    hidden_1 = tf.layers.dense(input_placeholder,
+                                400,
+                                activation=tf.nn.relu,
+                                name='hidden_layer_1')
+    dropped_hidden_1 = tf.layers.dropout(hidden_1, KEEP_PROB)
+    hidden_2 = tf.layers.dense(dropped_hidden_1,
+                                400,
+                                activation=tf.nn.relu,
+                                name='hidden_layer_2')
+    dropped_hidden_2 = tf.layers.dropout(hidden_2, KEEP_PROB)
+    output = tf.layers.dense(dropped_hidden_2,
+                                10,
+                                name='output_layer')
+    tf.identity(output, name='model_output')
 
     # define classification loss
     y = tf.placeholder(tf.float32, [None, 10], name='label')
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=output)
     red_mean = tf.reduce_mean(cross_entropy)
     confusion_matrix_op = tf.confusion_matrix(tf.argmax(y, axis=1), tf.argmax(output, axis=1), num_classes=10)
+    accuracy_op = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(output, axis=1), tf.argmax(y, axis=1)) , tf.float32))
 
 
     # set up training and saving functionality
@@ -112,10 +100,10 @@ def main(argv):
 
         # run training
         batch_size = FLAGS.batch_size
-        min_validation_ce = float("inf")
+        best_validation_ce = float("inf")
+        best_accuracy = float("inf")
         count = 0
         for epoch in range(FLAGS.max_epoch_num):
-            print('Epoch: ' + str(epoch))
 
             # run gradient steps and report mean loss on train data
             ce_vals = []
@@ -125,40 +113,27 @@ def main(argv):
                 _, train_ce = session.run([train_op, red_mean], {input_placeholder: batch_xs, y: batch_ys})
                 ce_vals.append(train_ce)
             avg_train_ce = sum(ce_vals) / len(ce_vals)
-            print('TRAIN CROSS ENTROPY: ' + str(avg_train_ce))
 
+            accuracy_vals = []
             ce_vals = []
             conf_mxs = []
             for i in range(validation_num_examples // batch_size):
                 batch_xs = validation_images[i*batch_size:(i+1)*batch_size, :]
                 batch_ys = validation_labels[i*batch_size:(i+1)*batch_size, :]       
-                validate_ce, conf_matrix= session.run([red_mean, confusion_matrix_op], {input_placeholder: batch_xs, y: batch_ys})
+                validate_ce, conf_matrix, accuracy = session.run([red_mean, confusion_matrix_op, accuracy_op], {input_placeholder: batch_xs, y: batch_ys})
                 ce_vals.append(validate_ce)
                 conf_mxs.append(conf_matrix)
+                accuracy_vals.append(accuracy)
             avg_validation_ce = sum(ce_vals) / len(ce_vals)
-            print('VALIDATION CROSS ENTROPY: ' + str(avg_validation_ce))
+            avg_accuracy = sum(accuracy_vals) / len(accuracy_vals)
 
-            # report mean test loss
-            #ce_vals = []
-            #conf_mxs = []
-            #for i in range(test_num_examples // batch_size):
-            #    batch_xs = test_images[i*batch_size:(i+1)*batch_size, :]
-            #    batch_ys = test_labels[i*batch_size:(i+1)*batch_size, :]
-            #    test_ce, conf_matrix = session.run([red_mean, confusion_matrix_op], {x: batch_xs, y: batch_ys})
-            #    ce_vals.append(test_ce)
-            #    conf_mxs.append(conf_matrix)
-            #avg_test_ce = sum(ce_vals) / len(ce_vals)
-            #print('TEST CROSS ENTROPY: ' + str(avg_test_ce))
-            #print('TEST CONFUSION MATRIX:')
-            #print(str(sum(conf_mxs)))
-
-            if avg_validation_ce < min_validation_ce:
-                min_validation_ce = avg_validation_ce
+            if avg_validation_ce < best_validation_ce:
+                best_validation_ce = avg_validation_ce
                 best_epoch = epoch
                 best_train_ce = avg_train_ce
-                #best_test_ce = avg_test_ce
-                #best_conf_mxs = sum(conf_mxs)
-                best_model = saver.save(session, os.path.join(FLAGS.save_dir, "mnist_inference"), global_step=global_step_tensor)
+                best_conf_mxs = sum(conf_mxs)
+                best_accuracy = avg_accuracy
+                best_model = saver.save(session, os.path.join(FLAGS.save_dir, "homework_1-0"))
                 count = 0
             else:
                 count += 1
@@ -167,10 +142,10 @@ def main(argv):
                 break
 
         print("EPOCH: " + str(best_epoch) +
-              "\nTRAIN LOSS: " + str(best_train_ce) +
-              "\nVALIDATION LOSS: " + str(min_validation_ce))
-        #      "\nTEST LOSS: " + str(best_test_ce) +
-        #      "\nCONFUSION MATRIX: " + str(best_conf_mxs))
+                "\nTRAIN LOSS: " + str(best_train_ce) +
+                "\nVALIDATION LOSS: " + str(best_validation_ce) +
+                "\nACCURACY: " + str(best_accuracy) +
+                "\nCONFUSION MATRIX: " + str(best_conf_mxs))
 
 
 if __name__ == "__main__":
