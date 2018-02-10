@@ -65,12 +65,16 @@ def main(argv):
 
     dropped_input = tf.layers.dropout(input_norm, KEEP_PROB)
     hidden_1 = tf.layers.dense(dropped_input,
-                                400,
+                                500,
                                 activation=tf.nn.relu,
+                                kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
+                                bias_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
                                 name='hidden_layer_1')
     dropped_hidden_1 = tf.layers.dropout(hidden_1, KEEP_PROB)
     hidden_2 = tf.layers.dense(dropped_hidden_1,
-                                400,
+                                500,
+                                kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
+                                bias_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
                                 activation=tf.nn.relu,
                                 name='hidden_layer_2')
     dropped_hidden_2 = tf.layers.dropout(hidden_2, KEEP_PROB)
@@ -100,7 +104,7 @@ def main(argv):
         # run training
         batch_size = FLAGS.batch_size
         best_validation_ce = float("inf")
-        best_accuracy_ = float("inf")
+        best_accuracy_ = 0.0
         count = 0
         for epoch in range(FLAGS.max_epoch_num):
 
@@ -127,11 +131,11 @@ def main(argv):
             avg_accuracy = sum(accuracy_vals) / len(accuracy_vals)
 
             with open('/work/soh/charms/cse496dl/homework/01/basic/model_out.txt', "a") as myfile:
-                myfile.write("epoch: " + str(epoch) +
-                "\ntrain loss: " + str(avg_train_ce) +
-                "\nvalidation LOSS: " + str(avg_validation_ce) +
-                "\naccuracy: " + str(avg_accuracy) +
-                "\n------------------------------")
+                myfile.write("Epoch: " + str(epoch) +
+                "\nTrain loss: " + str(avg_train_ce) +
+                "\nValidation loss: " + str(avg_validation_ce) +
+                "\nAccuracy: " + str(avg_accuracy) +
+                "\n------------------------------\n")
 
             if avg_validation_ce < best_validation_ce:
                 best_validation_ce = avg_validation_ce
@@ -141,10 +145,8 @@ def main(argv):
                 best_accuracy = avg_accuracy
                 best_model = saver.save(session, os.path.join(FLAGS.save_dir, "homework_1-0_val"))
                 count = 0
-            else:
-                count += 1
 
-            if avg_accuracy < best_accuracy_:
+            if avg_accuracy > best_accuracy_:
                 best_validation_ce_ = avg_validation_ce
                 best_epoch_ = epoch
                 best_train_ce_ = avg_train_ce
@@ -152,20 +154,21 @@ def main(argv):
                 best_accuracy_ = avg_accuracy
                 best_model_ = saver.save(session, os.path.join(FLAGS.save_dir, "homework_1-0_acu"))
                 count = 0
-            
-            if count > 12 :
-                break
 
         with open('/work/soh/charms/cse496dl/homework/01/basic/model_out.txt', "a") as myfile:
-            myfile.write("EPOCH: " + str(best_epoch) +
+            myfile.write("BEST VALIDATION CROSS-ENTROPY" +
+                         "\n-----------------------------" +
+            "\nEPOCH: " + str(best_epoch) +
             "\nTRAIN LOSS: " + str(best_train_ce) +
             "\nVALIDATION LOSS: " + str(best_validation_ce) +
             "\nACCURACY: " + str(best_accuracy) +
             "\nCONFUSION MATRIX: " + str(best_conf_mx) +
-            "\n------------------------------------------")
+            "\n------------------------------------------\n")
 
         with open('/work/soh/charms/cse496dl/homework/01/basic/model_out.txt', "a") as myfile:
-            myfile.write("EPOCH: " + str(best_epoch_) +
+            myfile.write("BEST ACCURACY" +
+                         "\n--------------" +
+            "EPOCH: " + str(best_epoch_) +
             "\nTRAIN LOSS: " + str(best_train_ce_) +
             "\nVALIDATION LOSS: " + str(best_validation_ce_) +
             "\nACCURACY: " + str(best_accuracy_) +
