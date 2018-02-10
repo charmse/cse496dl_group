@@ -58,7 +58,7 @@ def main(argv):
     validation_num_examples = validation_images.shape[0]
     train_num_examples = train_images.shape[0]
     
-    with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500__500_do_l2.txt', "w+") as myfile:
+    with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500__500_do_l2.txt', "w+") as file:
         # specify the network
         input_placeholder = tf.placeholder(tf.float32, [None, 784], name='data')
         input_norm = input_placeholder/255
