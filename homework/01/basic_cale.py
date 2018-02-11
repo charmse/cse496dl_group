@@ -134,6 +134,8 @@ def main(argv):
                 best_accuracy = avg_accuracy
                 best_model = saver.save(session, os.path.join(FLAGS.save_dir, "homework_1-0_val"))
                 count = 0
+            else:
+                count += 1
 
             if avg_accuracy > best_accuracy_:
                 best_validation_ce_ = avg_validation_ce
@@ -143,6 +145,11 @@ def main(argv):
                 best_accuracy_ = avg_accuracy
                 best_model_ = saver.save(session, os.path.join(FLAGS.save_dir, "homework_1-0_acu"))
                 count = 0
+            else:
+                count += 1
+
+            if count > 20:
+                break
 
         with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500_0.8_1.0.txt', 'a') as myfile:
             myfile.write("BEST VALIDATION CROSS-ENTROPY" +
