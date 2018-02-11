@@ -50,7 +50,7 @@ def main(argv):
     # specify the network
     input_placeholder = tf.placeholder(tf.float32, [None, 784], name='input_placeholder')
     input_norm = input_placeholder/255
-    KEEP_PROB = 0.8
+    KEEP_PROB = 0.5
 
     with tf.name_scope('linear_model') as scope:
         dropped_input = tf.layers.dropout(input_norm, KEEP_PROB)
@@ -93,7 +93,6 @@ def main(argv):
         # run training
         batch_size = FLAGS.batch_size
         best_validation_ce = float("inf")
-        best_accuracy_ = 0.0
         count = 0
         for epoch in range(FLAGS.max_epoch_num):
 
@@ -119,7 +118,7 @@ def main(argv):
             avg_validation_ce = sum(ce_vals) / len(ce_vals)
             avg_accuracy = sum(accuracy_vals) / len(accuracy_vals)
 
-            with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500_0.8_1.0.txt', 'a') as myfile:
+            with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500_0.5_1.0.txt', 'a') as myfile:
                 myfile.write("Epoch: " + str(epoch) +
                 "\nTrain loss: " + str(avg_train_ce) +
                 "\nValidation loss: " + str(avg_validation_ce) +
@@ -132,26 +131,15 @@ def main(argv):
                 best_train_ce = avg_train_ce
                 best_conf_mx = sum(conf_mxs)
                 best_accuracy = avg_accuracy
-                best_model = saver.save(session, os.path.join(FLAGS.save_dir, "homework_1-0_val"))
+                best_model = saver.save(session, os.path.join(FLAGS.save_dir, "homework_1-0_500_0.5_1.0"))
                 count = 0
             else:
                 count += 1
 
-            if avg_accuracy > best_accuracy_:
-                best_validation_ce_ = avg_validation_ce
-                best_epoch_ = epoch
-                best_train_ce_ = avg_train_ce
-                best_conf_mx_ = sum(conf_mxs)
-                best_accuracy_ = avg_accuracy
-                best_model_ = saver.save(session, os.path.join(FLAGS.save_dir, "homework_1-0_acu"))
-                count = 0
-            else:
-                count += 1
-
-            if count > 20:
+            if count > 12:
                 break
 
-        with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500_0.8_1.0.txt', 'a') as myfile:
+        with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500_0.5_1.0.txt', 'a') as myfile:
             myfile.write("BEST VALIDATION CROSS-ENTROPY" +
                             "\n-----------------------------" +
             "\nEPOCH: " + str(best_epoch) +
@@ -160,17 +148,6 @@ def main(argv):
             "\nACCURACY: " + str(best_accuracy) +
             "\nCONFUSION MATRIX: " + str(best_conf_mx) +
             "\n------------------------------------------\n")
-
-        with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500_0.8_1.0.txt', 'a') as myfile:
-            myfile.write("BEST ACCURACY" +
-                            "\n--------------" +
-            "\nEPOCH: " + str(best_epoch_) +
-            "\nTRAIN LOSS: " + str(best_train_ce_) +
-            "\nVALIDATION LOSS: " + str(best_validation_ce_) +
-            "\nACCURACY: " + str(best_accuracy_) +
-            "\nCONFUSION MATRIX: " + str(best_conf_mx_))
-
-
 
 if __name__ == "__main__":
     tf.app.run()
