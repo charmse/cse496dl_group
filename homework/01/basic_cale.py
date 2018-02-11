@@ -12,26 +12,19 @@ flags.DEFINE_integer('max_epoch_num', 100, '')
 FLAGS = flags.FLAGS
 
 def split_data(data, labels, proportion):
-    """
-    Split a numpy array into two parts of `proportion` and `1 - proportion`
-    
-    Args:
-        - data: numpy array of data, to be split along the first axis
-        - labels: numpy array of the labels
-        - proportion: a float less than 1  
-        
-    Returns:
-        In order,
-        - Validation set data
-        - Training set data
-        - Validation set labels
-        - Training set labels
+    """                                                                                                                                                                                                                                                                                                          
+    Split a numpy array into two parts of `proportion` and `1 - proportion`                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                 
+    Args:                                                                                                                                                                                                                                                                                                        
+        - data: numpy array, to be split along the first axis                                                                                                                                                                                                                                                    
+        - labels: numpy array to be split in the same way that data is split                                                                                                                                                                                                                                     
+        - proportion: a float less than 1                                                                                                                                                                                                                                                                        
     """
     size = data.shape[0]
     np.random.seed(42)
-    s = np.random.permutation(size)
+    indicies = np.random.permutation(size)
     split_idx = int(proportion * size)
-    return (data[s[:split_idx]], data[s[split_idx:]], labels[s[:split_idx]], labels[s[split_idx:]])
+    return data[indicies[:split_idx]], data[indicies[split_idx:]], labels[indicies[:split_idx]], labels[indicies[split_idx:]]
 
 def transform_labels(labels):
     new_labels = []
@@ -49,39 +42,36 @@ def main(argv):
 
     # split into train and validate
   
-    sp_data = split_data(train_images, train_labels, .90)
-    validation_images = sp_data[0]
-    train_images = sp_data[1]
-    validation_labels = sp_data[2]
-    train_labels = sp_data[3]
+    train_images, validation_images, train_labels, validation_labels = split_data(train_images, train_labels, .90)
 
     validation_num_examples = validation_images.shape[0]
     train_num_examples = train_images.shape[0]
     
     # specify the network
-    input_placeholder = tf.placeholder(tf.float32, [None, 784], name='data')
+    input_placeholder = tf.placeholder(tf.float32, [None, 784], name='input_placeholder')
     input_norm = input_placeholder/255
-    KEEP_PROB = 0.5
+    KEEP_PROB = 0.8
 
-    dropped_input = tf.layers.dropout(input_norm, KEEP_PROB)
-    hidden_1 = tf.layers.dense(dropped_input,
-                                500,
-                                activation=tf.nn.relu,
-                                kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
-                                bias_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
-                                name='hidden_layer_1')
-    dropped_hidden_1 = tf.layers.dropout(hidden_1, KEEP_PROB)
-    hidden_2 = tf.layers.dense(dropped_hidden_1,
-                                500,
-                                kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
-                                bias_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
-                                activation=tf.nn.relu,
-                                name='hidden_layer_2')
-    dropped_hidden_2 = tf.layers.dropout(hidden_2, KEEP_PROB)
-    output = tf.layers.dense(dropped_hidden_2,
-                                10,
-                                name='output_layer')
-    tf.identity(output, name='model_output')
+    with tf.name_scope('linear_model') as scope:
+        dropped_input = tf.layers.dropout(input_norm, KEEP_PROB)
+        hidden_1 = tf.layers.dense(dropped_input,
+                                    500,
+                                    activation=tf.nn.relu,
+                                    # kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
+                                    # bias_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
+                                    name='hidden_layer_1')
+        dropped_hidden_1 = tf.layers.dropout(hidden_1, KEEP_PROB)
+        # hidden_2 = tf.layers.dense(dropped_hidden_1,
+        #                             500,
+        #                             kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
+        #                             bias_regularizer=tf.contrib.layers.l2_regularizer(scale=1.),
+        #                             activation=tf.nn.relu,
+        #                             name='hidden_layer_2')
+        # dropped_hidden_2 = tf.layers.dropout(hidden_2, KEEP_PROB)
+        output = tf.layers.dense(dropped_hidden_1,
+                                    10,
+                                    name='output_layer')
+    tf.identity(output, name='output')
 
     # define classification loss
     y = tf.placeholder(tf.float32, [None, 10], name='label')
@@ -95,7 +85,6 @@ def main(argv):
     global_step_tensor = tf.get_variable('global_step', trainable=False, shape=[], initializer=tf.zeros_initializer)
     optimizer = tf.train.AdamOptimizer()
     train_op = optimizer.minimize(cross_entropy, global_step=global_step_tensor)
-    validate_op = optimizer.minimize(cross_entropy, global_step=global_step_tensor)
     saver = tf.train.Saver()
 
     with tf.Session() as session:
@@ -130,7 +119,7 @@ def main(argv):
             avg_validation_ce = sum(ce_vals) / len(ce_vals)
             avg_accuracy = sum(accuracy_vals) / len(accuracy_vals)
 
-            with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500_500_dout_l2.txt', 'a') as myfile:
+            with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500_0.8_1.0.txt', 'a') as myfile:
                 myfile.write("Epoch: " + str(epoch) +
                 "\nTrain loss: " + str(avg_train_ce) +
                 "\nValidation loss: " + str(avg_validation_ce) +
@@ -155,7 +144,7 @@ def main(argv):
                 best_model_ = saver.save(session, os.path.join(FLAGS.save_dir, "homework_1-0_acu"))
                 count = 0
 
-        with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500_500_dout_l2.txt', 'a') as myfile:
+        with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500_0.8_1.0.txt', 'a') as myfile:
             myfile.write("BEST VALIDATION CROSS-ENTROPY" +
                             "\n-----------------------------" +
             "\nEPOCH: " + str(best_epoch) +
@@ -165,10 +154,10 @@ def main(argv):
             "\nCONFUSION MATRIX: " + str(best_conf_mx) +
             "\n------------------------------------------\n")
 
-        with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500_500_dout_l2.txt', 'a') as myfile:
+        with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500_0.8_1.0.txt', 'a') as myfile:
             myfile.write("BEST ACCURACY" +
                             "\n--------------" +
-            "EPOCH: " + str(best_epoch_) +
+            "\nEPOCH: " + str(best_epoch_) +
             "\nTRAIN LOSS: " + str(best_train_ce_) +
             "\nVALIDATION LOSS: " + str(best_validation_ce_) +
             "\nACCURACY: " + str(best_accuracy_) +
