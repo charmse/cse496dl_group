@@ -7,7 +7,7 @@ import util_cale
 
 flags = tf.app.flags
 flags.DEFINE_string('data_dir', '/work/cse496dl/shared/homework/01/', 'directory where MNIST is located')
-flags.DEFINE_string('save_dir', '/work/soh/charms/cse496dl/homework/01/basic/', 'directory where model graph and weights are saved')
+flags.DEFINE_string('save_dir', '/work/soh/charms/cse496dl/homework/01/', 'directory where model graph and weights are saved')
 flags.DEFINE_integer('batch_size', 32, '')
 flags.DEFINE_integer('max_epoch_num', 100, '')
 FLAGS = flags.FLAGS
@@ -37,7 +37,7 @@ def main(argv):
 
     # set up training and saving functionality
     global_step_tensor = tf.get_variable('global_step', trainable=False, shape=[], initializer=tf.zeros_initializer)
-    optimizer = tf.train.AdamOptimizer()
+    optimizer = tf.train.AdamOptimizer(learning_rate=0.0005)
     train_op = optimizer.minimize(cross_entropy, global_step=global_step_tensor)
     saver = tf.train.Saver()
 
@@ -72,7 +72,7 @@ def main(argv):
             avg_validation_ce = sum(ce_vals) / len(ce_vals)
             avg_accuracy = sum(accuracy_vals) / len(accuracy_vals)
 
-            with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500_0.5_1.0.txt', 'a') as myfile:
+            with open('/work/soh/charms/cse496dl/homework/01/model_out.txt', 'a') as myfile:
                 myfile.write("Epoch: " + str(epoch) +
                 "\nTrain loss: " + str(avg_train_ce) +
                 "\nValidation loss: " + str(avg_validation_ce) +
@@ -85,7 +85,7 @@ def main(argv):
                 best_train_ce = avg_train_ce
                 best_conf_mx = sum(conf_mxs)
                 best_accuracy = avg_accuracy
-                best_model = saver.save(session, os.path.join(FLAGS.save_dir, "homework_1-0_500_0.5_1.0"))
+                best_model = saver.save(session, os.path.join(FLAGS.save_dir, "homework_1-0"))
                 count = 0
             else:
                 count += 1
@@ -93,14 +93,14 @@ def main(argv):
             if count > 12:
                 break
 
-        with open('/work/soh/charms/cse496dl/homework/01/basic/model_out_500_0.5_1.0.txt', 'a') as myfile:
+        with open('/work/soh/charms/cse496dl/homework/01/model_out.txt', 'a') as myfile:
             myfile.write("BEST VALIDATION CROSS-ENTROPY" +
                             "\n-----------------------------" +
             "\nEPOCH: " + str(best_epoch) +
             "\nTRAIN LOSS: " + str(best_train_ce) +
             "\nVALIDATION LOSS: " + str(best_validation_ce) +
             "\nACCURACY: " + str(best_accuracy) +
-            "\nCONFUSION MATRIX: " + str(best_conf_mx) +
+            "\nCONFUSION MATRIX: \n" + str(best_conf_mx) +
             "\n------------------------------------------\n")
 
 if __name__ == "__main__":
