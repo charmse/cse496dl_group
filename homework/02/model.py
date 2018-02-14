@@ -23,7 +23,7 @@ def make(x,struct):
             activs = util.get_activators(arch_and_params[2].split(","))
             types = arch_and_params[3].split(",")
             reg_vals = list(map(float, arch_and_params[4].split(",")))
-            regs = util.get_regeularizers(types, reg_vals)
+            regs = util.get_regularizers(types, reg_vals)
 
             if block_type == "D":
                 if len(np.shape(block_output)) > 2:

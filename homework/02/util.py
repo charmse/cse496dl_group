@@ -85,13 +85,6 @@ def dense_block(input, neurons, activs, regs, block_num):
         activs = extend([activs], n)
     elif(len(activs) != n):
         activs = extend(activs, n)
-
-    #check activs 
-    if(not isinstance(types, list)):
-        types = extend([types], n)
-    elif(len(types) != n):
-        types = extend(types, n)
-
     #check regs
     if(not isinstance(regs, list)):
         regs = extend([regs], n)
@@ -103,16 +96,16 @@ def dense_block(input, neurons, activs, regs, block_num):
     i = 1
     layer_number = 1
     with tf.name_scope(block_name) as scope:
-        for n,a,r in zip(neurons,activs,types,regs):
+        for n,a,r in zip(neurons,activs,regs):
             layer_name = block_name + "_dense_layer_" + str(layer_number)
-            if(isinstance(r, int)):
+            if(isinstance(r, float)):
                 layer = tf.layers.dense(layers[i-1], n, activation = a, name = layer_name)
                 dropout_layer = tf.layers.dropout(layer, r,name = layer_name + "dropout")
                 layers.append(layer)
                 layers.append(dropout_layer)
                 i += 2
             else:
-                layer = tf.layers.dense(layers[i-1], n, 1, activation = a, kernel_regularizer = r, bias_regularizer = r, name = layer_name)
+                layer = tf.layers.dense(layers[i-1], n, activation = a, kernel_regularizer = r, bias_regularizer = r, name = layer_name)
                 layers.append(layer)
                 i += 1
             layer_number += 1
