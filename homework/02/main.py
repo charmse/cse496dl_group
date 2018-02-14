@@ -79,7 +79,7 @@ def main(argv):
     test_labels = [test_labels_1, test_labels_2, test_labels_3, test_labels_4]
 
     # specify the network
-    x = tf.placeholder(tf.float32, [None, 128, 128, 1], name='input_placeholder')
+    x = tf.placeholder(tf.float32, [None, 16641], name='input_placeholder')
     output = model.make(x,struct)
     tf.identity(output, name='output')
 
