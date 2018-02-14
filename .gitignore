@@ -2,4 +2,7 @@
 homework/*~*
 homework/01/*~*
 homework/01/*run_py*
+homework/02/*run_py*
 project/*~*
+homework/01/*.pyc
+homework/02/*.pyc
