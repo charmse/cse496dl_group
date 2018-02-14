@@ -27,7 +27,7 @@ def make(x,struct):
 
             if block_type == "D":
                 if len(np.shape(block_output)) > 2:
-                    flat_shape = np.prod(np.shape(block_output)[1:])
+                    flat_shape = int(np.prod(np.shape(block_output)[1:]))
                     block_output = tf.reshape(block_output, [-1, flat_shape])
                 block_output = util.dense_block(block_output, neurons_or_filters, activs, regs, dense_block_num)
                 dense_block_num += 1

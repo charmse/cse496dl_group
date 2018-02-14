@@ -42,7 +42,7 @@ def main(argv):
             data_dir = FLAGS.data_dir + "SAVEE-British/"
     else:
         data_dir = FLAGS.data_dir + "EMODB-German/"
-        save_prefix = "emodb_"    
+        save_prefix = "emodb_" 
 
     # load training data
     train_images_1 = np.load(data_dir + 'train_x_1.npy')
