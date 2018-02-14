@@ -49,10 +49,10 @@ def main(argv):
     train_images_2 = np.load(data_dir + 'train_x_2.npy')
     train_images_3 = np.load(data_dir + 'train_x_3.npy')
     train_images_4 = np.load(data_dir + 'train_x_4.npy')
-    train_labels_1 = util.onehot(np.load(data_dir + 'train_y_1.npy'))
-    train_labels_2 = util.onehot(np.load(data_dir + 'train_y_2.npy'))
-    train_labels_3 = util.onehot(np.load(data_dir + 'train_y_3.npy'))
-    train_labels_4 = util.onehot(np.load(data_dir + 'train_y_4.npy'))
+    train_labels_1 = np.load(data_dir + 'train_y_1.npy')
+    train_labels_2 = np.load(data_dir + 'train_y_2.npy')
+    train_labels_3 = np.load(data_dir + 'train_y_3.npy')
+    train_labels_4 = np.load(data_dir + 'train_y_4.npy')
 
     # load testing data
     test_images_1 = np.load(data_dir + 'test_x_1.npy')
