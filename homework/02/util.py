@@ -103,8 +103,8 @@ def dense_block(input, neurons, activs, regs, block_num):
     i = 1
     layer_number = 1
     with tf.name_scope(block_name) as scope:
-        layer_name = block_name + "_dense_layer_" + str(layer_number)
         for n,a,r in zip(neurons,activs,types,regs):
+            layer_name = block_name + "_dense_layer_" + str(layer_number)
             if(isinstance(r, int)):
                 layer = tf.layers.dense(layers[i-1], n, activation = a, name = layer_name)
                 dropout_layer = tf.layers.dropout(layer, r,name = layer_name + "dropout")
@@ -156,8 +156,8 @@ def conv_block(inputs, filters, kernels, activs, regs, block_num):
     i = 1
     layer_number = 1
     with tf.name_scope(block_name) as scope:
-        layer_name = block_name + "_dense_layer_" + str(layer_number)
         for f,k,a,r in zip(filters,kernels,activs,regs):
+            layer_name = block_name + "_conv_layer_" + str(layer_number)
             layer = tf.layers.conv2d(layers[i-1], f, k, 1, activation = a, kernel_regularizer = r, padding='same', name = layer_name)
             pool = tf.layers.max_pooling2d(layer, 2, 2, padding='same')
             layers.append(layer)
@@ -204,8 +204,8 @@ def sep_conv_block(inputs, filters, kernels, activs, regs, block_num):
     i = 1
     layer_number = 1
     with tf.name_scope(block_name) as scope:
-        layer_name = block_name + "_sep_conv_layer_" + str(layer_number)
         for f,k,a,r in zip(filters,kernels,activs,regs):
+            layer_name = block_name + "_sep_conv_layer_" + str(layer_number)
             layer = tf.layers.separable_conv2d(layers[i-1], f, k, 1, activation = a, pointwise_regularizer = r, depthwise_regularizer = r, padding='same', name = layer_name)
             pool = tf.layers.max_pooling2d(layer, 2, 2, padding='same')
             layers.append(layer)

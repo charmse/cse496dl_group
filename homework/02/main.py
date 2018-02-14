@@ -14,33 +14,55 @@ flags.DEFINE_integer('max_epoch_num', 100, '')
 FLAGS = flags.FLAGS
 
 def main(argv):
-    # Set arguments
+
+    # Set arguments:  Save_Dir Structure Learning_Rate Earling_Stoping Batch_Size Data_Dir    
     struct = sys.argv[1]
-    learning_rate = float(sys.argv[2])
-    if len(sys.argv) > 3:
-        save_dir = sys.argv[3]
+    if len(sys.argv) > 2:
+        save_dir = sys.argv[2]
     else:
         save_dir = FLAGS.save_dir
+    if len(sys.argv) > 3:
+        learning_rate = float(sys.argv[3])
+    else:
+        learning_rate = 0.001
+    if len(sys.argv) > 4:
+        stop_wait = sys.argv[4]
+    else:
+        stop_wait = 8
+    if len(sys.argv) > 5:
+        batch_size = sys.argv[5]
+    else:
+        batch_size = FLAGS.batch_size
+    
+    if len(sys.argv) > 6:
+        if sys.argv[6] == "emodb":
+            data_dir = FLAGS.data_dir + "EMODB-German/"
+            save_prefix = "emodb_"
+        elif sys.argv[6] == "savee":
+            data_dir = FLAGS.data_dir + "SAVEE-British/"
+    else:
+        data_dir = FLAGS.data_dir + "EMODB-German/"
+        save_prefix = "emodb_"    
 
     # load training data
-    train_images_1 = np.load(FLAGS.data_dir + 'train_x_1.npy')
-    train_images_2 = np.load(FLAGS.data_dir + 'train_x_2.npy')
-    train_images_3 = np.load(FLAGS.data_dir + 'train_x_3.npy')
-    train_images_4 = np.load(FLAGS.data_dir + 'train_x_4.npy')
-    train_labels_1 = util.onehot(np.load(FLAGS.data_dir + 'train_y_1.npy'))
-    train_labels_2 = util.onehot(np.load(FLAGS.data_dir + 'train_y_2.npy'))
-    train_labels_3 = util.onehot(np.load(FLAGS.data_dir + 'train_y_3.npy'))
-    train_labels_4 = util.onehot(np.load(FLAGS.data_dir + 'train_y_4.npy'))
+    train_images_1 = np.load(data_dir + 'train_x_1.npy')
+    train_images_2 = np.load(data_dir + 'train_x_2.npy')
+    train_images_3 = np.load(data_dir + 'train_x_3.npy')
+    train_images_4 = np.load(data_dir + 'train_x_4.npy')
+    train_labels_1 = util.onehot(np.load(data_dir + 'train_y_1.npy'))
+    train_labels_2 = util.onehot(np.load(data_dir + 'train_y_2.npy'))
+    train_labels_3 = util.onehot(np.load(data_dir + 'train_y_3.npy'))
+    train_labels_4 = util.onehot(np.load(data_dir + 'train_y_4.npy'))
 
     # load testing data
-    test_images_1 = np.load(FLAGS.data_dir + 'test_x_1.npy')
-    test_images_2 = np.load(FLAGS.data_dir + 'test_x_2.npy')
-    test_images_3 = np.load(FLAGS.data_dir + 'test_x_3.npy')
-    test_images_4 = np.load(FLAGS.data_dir + 'test_x_4.npy')
-    test_labels_1 = util.onehot(np.load(FLAGS.data_dir + 'test_y_1.npy'))
-    test_labels_2 = util.onehot(np.load(FLAGS.data_dir + 'test_y_2.npy'))
-    test_labels_3 = util.onehot(np.load(FLAGS.data_dir + 'test_y_3.npy'))
-    test_labels_4 = util.onehot(np.load(FLAGS.data_dir + 'test_y_4.npy'))
+    test_images_1 = np.load(data_dir + 'test_x_1.npy')
+    test_images_2 = np.load(data_dir + 'test_x_2.npy')
+    test_images_3 = np.load(data_dir + 'test_x_3.npy')
+    test_images_4 = np.load(data_dir + 'test_x_4.npy')
+    test_labels_1 = util.onehot(np.load(data_dir + 'test_y_1.npy'))
+    test_labels_2 = util.onehot(np.load(data_dir + 'test_y_2.npy'))
+    test_labels_3 = util.onehot(np.load(data_dir + 'test_y_3.npy'))
+    test_labels_4 = util.onehot(np.load(data_dir + 'test_y_4.npy'))
 
     # split into train and validate
     train_images_1, valid_images_1, train_labels_1, valid_labels_1 = util.split_data(train_images_1, train_labels_1, .90)
@@ -75,7 +97,7 @@ def main(argv):
     saver = tf.train.Saver()
 
     #Open file to write to
-    myfile = open(save_dir + 'output/model_' + struct + '_out.txt', 'w+')
+    myfile = open(save_dir + 'output/' + save_prefix + 'model_' + struct + '_out.txt', 'w+')
 
     #Create lists to collect best models
     best_epochs = []
@@ -89,10 +111,10 @@ def main(argv):
         valid_num_examples = valid_images.shape[0]
         test_num_examples = test_images.shape[0]
         with tf.Session() as session:
+
             session.run(tf.global_variables_initializer())
 
             # run training
-            batch_size = FLAGS.batch_size
             best_validation_ce = float("inf")
             count = 0
             for epoch in range(FLAGS.max_epoch_num):
@@ -131,12 +153,12 @@ def main(argv):
                     best_train_ce = avg_train_ce
                     best_conf_mx = sum(conf_mxs)
                     best_accuracy = avg_accuracy
-                    best_model = saver.save(session, os.path.join(save_dir + "models/", "emodb_homework_2-0_" + struct + "_" + str(i)))
+                    best_model = saver.save(session, os.path.join(save_dir + "models/", save_prefix + "homework_2-0_" + struct + "_" + str(i)))
                     count = 0
                 else:
                     count += 1
 
-                if count > 12:
+                if count > stop_wait:
                     break
 
             myfile.write("BEST VALIDATION CROSS-ENTROPY" +
