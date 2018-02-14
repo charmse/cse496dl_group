@@ -8,7 +8,7 @@ import util
 
 flags = tf.app.flags
 flags.DEFINE_string('data_dir', '/work/cse496dl/shared/homework/02/', 'directory where MNIST is located')
-flags.DEFINE_string('save_dir', '$WORK/cse496dl/cse496dl_group/homework/02/', 'directory where model graph and weights are saved')
+flags.DEFINE_string('save_dir', '/cse496dl_group/homework/02/', 'directory where model graph and weights are saved')
 flags.DEFINE_integer('batch_size', 32, '')
 flags.DEFINE_integer('max_epoch_num', 100, '')
 FLAGS = flags.FLAGS
@@ -18,7 +18,7 @@ def main(argv):
     # Set arguments:  Save_Dir Structure Learning_Rate Earling_Stoping Batch_Size Data_Dir    
     struct = sys.argv[1]
     if len(sys.argv) > 2:
-        save_dir = sys.argv[2]
+        save_dir = sys.argv[2] + FLAGS.save_dir
     else:
         save_dir = FLAGS.save_dir
     if len(sys.argv) > 3:
