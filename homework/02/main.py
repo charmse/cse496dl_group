@@ -59,10 +59,10 @@ def main(argv):
     test_images_2 = np.load(data_dir + 'test_x_2.npy')
     test_images_3 = np.load(data_dir + 'test_x_3.npy')
     test_images_4 = np.load(data_dir + 'test_x_4.npy')
-    test_labels_1 = util.onehot(np.load(data_dir + 'test_y_1.npy'))
-    test_labels_2 = util.onehot(np.load(data_dir + 'test_y_2.npy'))
-    test_labels_3 = util.onehot(np.load(data_dir + 'test_y_3.npy'))
-    test_labels_4 = util.onehot(np.load(data_dir + 'test_y_4.npy'))
+    test_labels_1 = np.load(data_dir + 'test_y_1.npy')
+    test_labels_2 = np.load(data_dir + 'test_y_2.npy')
+    test_labels_3 = np.load(data_dir + 'test_y_3.npy')
+    test_labels_4 = np.load(data_dir + 'test_y_4.npy')
 
     # split into train and validate
     train_images_1, valid_images_1, train_labels_1, valid_labels_1 = util.split_data(train_images_1, train_labels_1, .90)
