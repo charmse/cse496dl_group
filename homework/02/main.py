@@ -32,10 +32,6 @@ def main(argv):
         data_dir = FLAGS.data_dir + "EMODB-German/"
         save_prefix = "emodb_"
 
-    x = tf.placeholder(tf.float32, [None, 16641], name='input_placeholder')
-    output = model.make(x,arch)
-    tf.identity(output, name='output')
-
     # load training data
     train_images_1 = np.load(data_dir + 'train_x_1.npy')
     train_images_2 = np.load(data_dir + 'train_x_2.npy')
