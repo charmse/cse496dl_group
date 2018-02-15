@@ -32,8 +32,6 @@ def main(argv):
         data_dir = FLAGS.data_dir + "EMODB-German/"
         save_prefix = "emodb_"
 
-    allfile = open('output/all_models_out.csv', 'a+')
-    allfile.ap
     # load training data
     train_images_1 = np.load(data_dir + 'train_x_1.npy')
     train_images_2 = np.load(data_dir + 'train_x_2.npy')
