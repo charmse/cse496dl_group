@@ -11,7 +11,7 @@ flags.DEFINE_string('data_dir', '/work/cse496dl/shared/homework/02/', 'directory
 flags.DEFINE_string('save_dir', '', 'directory where model graph and weights are saved')
 flags.DEFINE_integer('batch_size', 32, '')
 flags.DEFINE_float('lr', 0.001, '')
-flags.DEFINE_string('arch', 'C2:16,32,64;elu;l1;1.0;3,2|D:1000,500,250;elu;d;0.8', '')
+flags.DEFINE_string('arch', 'C2:16,32,64;elu;l1;1.0;3;2|D:1000,500,250;elu;d;0.8', '')
 flags.DEFINE_integer('early_stop', 6, '')
 flags.DEFINE_string('db', 'emodb', '')
 flags.DEFINE_integer('epoch_num', 100, '')
