@@ -8,41 +8,33 @@ import util
 
 flags = tf.app.flags
 flags.DEFINE_string('data_dir', '/work/cse496dl/shared/homework/02/', 'directory where MNIST is located')
-flags.DEFINE_string('save_dir', '/cse496dl_group/homework/02/', 'directory where model graph and weights are saved')
+flags.DEFINE_string('save_dir', '', 'directory where model graph and weights are saved')
 flags.DEFINE_integer('batch_size', 32, '')
-flags.DEFINE_integer('max_epoch_num', 100, '')
+flags.DEFINE_float('lr', 0.001, '')
+flags.DEFINE_string('arch', 'C2:16,32,64;elu;l1;1.0;3,2|D:1000,500,250;elu;d;0.8', '')
+flags.DEFINE_integer('early_stop', 6, '')
+flags.DEFINE_string('db', 'emodb', '')
+flags.DEFINE_integer('epoch_num', 100, '')
 FLAGS = flags.FLAGS
 
 def main(argv):
 
     # Set arguments:  Save_Dir Structure Learning_Rate Earling_Stoping Batch_Size Data_Dir    
-    struct = sys.argv[1]
-    if len(sys.argv) > 2:
-        save_dir = sys.argv[2] + FLAGS.save_dir
-    else:
-        save_dir = FLAGS.save_dir
-    if len(sys.argv) > 3:
-        learning_rate = float(sys.argv[3])
-    else:
-        learning_rate = 0.001
-    if len(sys.argv) > 4:
-        stop_wait = sys.argv[4]
-    else:
-        stop_wait = 8
-    if len(sys.argv) > 5:
-        batch_size = sys.argv[5]
-    else:
-        batch_size = FLAGS.batch_size
-    
-    if len(sys.argv) > 6:
-        if sys.argv[6] == "emodb":
-            data_dir = FLAGS.data_dir + "EMODB-German/"
-            save_prefix = "emodb_"
-        elif sys.argv[6] == "savee":
-            data_dir = FLAGS.data_dir + "SAVEE-British/"
-    else:
+    arch = FLAGS.arch
+    save_dir = FLAGS.save_dir
+    learning_rate = FLAGS.lr
+    stop_wait = FLAGS.early_stop
+    batch_size = FLAGS.batch_size
+    if FLAGS.db == "emodb":
         data_dir = FLAGS.data_dir + "EMODB-German/"
-        save_prefix = "emodb_" 
+        save_prefix = "emodb_"
+    elif FLAGS.db == "savee":
+        data_dir = FLAGS.data_dir + "SAVEE-British/"
+        save_prefix = "savee_"
+
+    x = tf.placeholder(tf.float32, [None, 16641], name='input_placeholder')
+    output = model.make(x,arch)
+    tf.identity(output, name='output')
 
     # load training data
     train_images_1 = np.load(data_dir + 'train_x_1.npy')
@@ -80,7 +72,7 @@ def main(argv):
 
     # specify the network
     x = tf.placeholder(tf.float32, [None, 16641], name='input_placeholder')
-    output = model.make(x,struct)
+    output = model.make(x,arch)
     tf.identity(output, name='output')
 
     # define classification loss
@@ -97,7 +89,7 @@ def main(argv):
     saver = tf.train.Saver()
 
     #Open file to write to
-    myfile = open(save_dir + 'output/' + save_prefix + 'model_' + struct + '_out.txt', 'w+')
+    myfile = open(save_dir + 'output/' + save_prefix + 'model_' + arch + '_out.txt', 'w+')
 
     #Create lists to collect best models
     best_epochs = []
@@ -117,7 +109,7 @@ def main(argv):
             # run training
             best_validation_ce = float("inf")
             count = 0
-            for epoch in range(FLAGS.max_epoch_num):
+            for epoch in range(FLAGS.epoch_num):
 
                 # run gradient steps and report mean loss on train data
                 ce_vals = []
@@ -153,7 +145,7 @@ def main(argv):
                     best_train_ce = avg_train_ce
                     best_conf_mx = sum(conf_mxs)
                     best_accuracy = avg_accuracy
-                    best_model = saver.save(session, os.path.join(save_dir + "models/", save_prefix + "homework_2-0_" + struct + "_" + str(i)))
+                    best_model = saver.save(session, os.path.join(save_dir + "models/", save_prefix + "homework_2-0_" + arch + "_" + str(i)))
                     count = 0
                 else:
                     count += 1
