@@ -23,14 +23,14 @@ def main(argv):
     arch = FLAGS.arch
     save_dir = FLAGS.save_dir
     learning_rate = FLAGS.lr
-    stop_wait = FLAGS.early_stop
+    early_stop = FLAGS.early_stop
     batch_size = FLAGS.batch_size
-    if FLAGS.db == "emodb":
-        data_dir = FLAGS.data_dir + "EMODB-German/"
-        save_prefix = "emodb_"
-    elif FLAGS.db == "savee":
+    if FLAGS.db == "savee":
         data_dir = FLAGS.data_dir + "SAVEE-British/"
         save_prefix = "savee_"
+    else:
+        data_dir = FLAGS.data_dir + "EMODB-German/"
+        save_prefix = "emodb_"
 
     x = tf.placeholder(tf.float32, [None, 16641], name='input_placeholder')
     output = model.make(x,arch)
@@ -89,7 +89,7 @@ def main(argv):
     saver = tf.train.Saver()
 
     #Open file to write to
-    myfile = open(save_dir + 'output/' + save_prefix + 'model_' + arch + '_out.txt', 'w+')
+    myfile = open(save_dir + 'output/' + save_prefix + 'model_' + arch + '_' + learning_rate + '_' + batch_size + '_' + early_stop + '_out.txt', 'w+')
 
     #Create lists to collect best models
     best_epochs = []
@@ -145,12 +145,12 @@ def main(argv):
                     best_train_ce = avg_train_ce
                     best_conf_mx = sum(conf_mxs)
                     best_accuracy = avg_accuracy
-                    best_model = saver.save(session, os.path.join(save_dir + "models/", save_prefix + "homework_2-0_" + arch + "_" + str(i)))
+                    best_model = saver.save(session, os.path.join(save_dir + "models/", save_prefix + "homework_2-0_" + arch + '_' + learning_rate + '_' + batch_size + '_' + early_stop +  "_" + str(i)))
                     count = 0
                 else:
                     count += 1
 
-                if count > stop_wait:
+                if count > early_stop:
                     break
 
             myfile.write("BEST VALIDATION CROSS-ENTROPY" +
