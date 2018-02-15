@@ -90,6 +90,7 @@ def main(argv):
 
     #Open file to write to
     myfile = open(save_dir + 'output/' + save_prefix + 'model_' + arch + '_' + learning_rate + '_' + batch_size + '_' + early_stop + '_out.txt', 'w+')
+    allfile = open('output/all_models_out.csv', 'a+')
 
     #Create lists to collect best models
     best_epochs = []
@@ -168,7 +169,11 @@ def main(argv):
             best_validation_ces.append(best_validation_ces)
             best_accuracies.append(best_accuracy)
             best_conf_mxs.append(best_conf_mx)
+            model_nos.append(i)
             i += 1
+
+    for model_no, epoch, train_ce, accuracy, validate_ce in zip(model_nos, best_epochs, best_train_ces, best_accuracies, best_validation_ces):
+        allfile.write(arch + ',' + str(model_no) + ',' + str(learning_rate) + ',' + str(early_stop) + ',' + str(batch_size) + ',' + str(epoch) + ',' + str(train_ce) + ',' + str(accuracy) + ',' + str(validate_ce))
 
     myfile.write("AVERAGE BEST VALIDATION CROSS-ENTROPY" +
     "\n-----------------------------" +
@@ -180,6 +185,7 @@ def main(argv):
     "\n------------------------------------------\n")
 
     myfile.close()
+    allfile.close()
 
 if __name__ == "__main__":
     tf.app.run()
