@@ -85,7 +85,7 @@ def main(argv):
     saver = tf.train.Saver()
 
     #Open file to write to
-    myfile = open(save_dir + 'output/' + save_prefix + 'model_' + arch + '_' + learning_rate + '_' + batch_size + '_' + early_stop + '_out.txt', 'w+')
+    myfile = open(save_dir + 'output/' + save_prefix + 'model_' + arch + '_' + str(learning_rate) + '_' + str(batch_size) + '_' + str(early_stop) + '_out.txt', 'w+')
     allfile = open('output/all_models_out.csv', 'a+')
 
     #Create lists to collect best models
@@ -94,6 +94,7 @@ def main(argv):
     best_validation_ces = []
     best_accuracies = []
     best_conf_mxs = []
+    model_nos = []
     i = 1
     for train_images, train_labels, valid_images, valid_labels, test_images, test_labels in zip(train_images, train_labels, valid_images, valid_labels, test_images, test_labels):
         train_num_examples = train_images.shape[0]
@@ -142,7 +143,7 @@ def main(argv):
                     best_train_ce = avg_train_ce
                     best_conf_mx = sum(conf_mxs)
                     best_accuracy = avg_accuracy
-                    best_model = saver.save(session, os.path.join(save_dir + "models/", save_prefix + "homework_2-0_" + arch + '_' + learning_rate + '_' + batch_size + '_' + early_stop +  "_" + str(i)))
+                    best_model = saver.save(session, os.path.join(save_dir + "models/", save_prefix + "homework_2-0_" + arch + '_' + str(learning_rate) + '_' + str(batch_size) + '_' + str(early_stop) +  "_" + str(i)))
                     count = 0
                 else:
                     count += 1
