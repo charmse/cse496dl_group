@@ -32,6 +32,8 @@ def main(argv):
         data_dir = FLAGS.data_dir + "EMODB-German/"
         save_prefix = "emodb_"
 
+    allfile = open('output/all_models_out.csv', 'a+')
+    allfile.ap
     # load training data
     train_images_1 = np.load(data_dir + 'train_x_1.npy')
     train_images_2 = np.load(data_dir + 'train_x_2.npy')
@@ -95,10 +97,10 @@ def main(argv):
     best_accuracies = []
     best_conf_mxs = []
     model_nos = []
-    i = 1
-    for train_images, train_labels, valid_images, valid_labels, test_images, test_labels in zip(train_images, train_labels, valid_images, valid_labels, test_images, test_labels):
+    model_no = 1
+    for train_images, train_labels, test_images, test_labels in zip(train_images, train_labels, test_images, test_labels):
         train_num_examples = train_images.shape[0]
-        valid_num_examples = valid_images.shape[0]
+        #valid_num_examples = valid_images.shape[0]
         test_num_examples = test_images.shape[0]
         with tf.Session() as session:
 
@@ -121,9 +123,9 @@ def main(argv):
                 accuracy_vals = []
                 ce_vals = []
                 conf_mxs = []
-                for i in range(valid_num_examples // batch_size):
-                    batch_xs = valid_images[i*batch_size:(i+1)*batch_size, :]
-                    batch_ys = valid_labels[i*batch_size:(i+1)*batch_size, :]       
+                for i in range(test_num_examples // batch_size):
+                    batch_xs = test_images[i*batch_size:(i+1)*batch_size, :]
+                    batch_ys = test_labels[i*batch_size:(i+1)*batch_size, :]       
                     validate_ce, conf_matrix, accuracy = session.run([red_mean, confusion_matrix_op, accuracy_op], {x: batch_xs, y: batch_ys})
                     ce_vals.append(validate_ce)
                     conf_mxs.append(conf_matrix)
@@ -143,7 +145,7 @@ def main(argv):
                     best_train_ce = avg_train_ce
                     best_conf_mx = sum(conf_mxs)
                     best_accuracy = avg_accuracy
-                    best_model = saver.save(session, os.path.join(save_dir + "models/", save_prefix + "homework_2-0_" + arch + '_' + str(learning_rate) + '_' + str(batch_size) + '_' + str(early_stop) +  "_" + str(i)))
+                    best_model = saver.save(session, os.path.join(save_dir + "models/", save_prefix + "homework_2-0_" + arch + '_' + str(learning_rate) + '_' + str(batch_size) + '_' + str(early_stop) +  "_" + str(model_no)))
                     count = 0
                 else:
                     count += 1
@@ -160,17 +162,16 @@ def main(argv):
             "\nCONFUSION MATRIX: \n" + str(best_conf_mx) +
             "\n------------------------------------------\n")
             
-            #Collect best's
-            best_epochs.append(best_epoch)
-            best_train_ces.append(best_train_ce)
-            best_validation_ces.append(best_validation_ces)
-            best_accuracies.append(best_accuracy)
-            best_conf_mxs.append(best_conf_mx)
-            model_nos.append(i)
-            i += 1
+        #Collect best's
+        best_epochs.append(best_epoch)
+        best_train_ces.append(best_train_ce)
+        best_validation_ces.append(best_validation_ces)
+        best_accuracies.append(best_accuracy)
+        model_nos.append(model_nos)
+        model_no += 1
 
     for model_no, epoch, train_ce, accuracy, validate_ce in zip(model_nos, best_epochs, best_train_ces, best_accuracies, best_validation_ces):
-        allfile.write(arch + ',' + str(model_no) + ',' + str(learning_rate) + ',' + str(early_stop) + ',' + str(batch_size) + ',' + str(epoch) + ',' + str(train_ce) + ',' + str(accuracy) + ',' + str(validate_ce))
+        allfile.write("\n{" + arch + '},' + str(model_no) + ',' + str(learning_rate) + ',' + str(early_stop) + ',' + str(batch_size) + ',' + str(epoch) + ',' + str(train_ce) + ',' + str(accuracy) + ',' + str(validate_ce))
 
     myfile.write("AVERAGE BEST VALIDATION CROSS-ENTROPY" +
     "\n-----------------------------" +
@@ -178,7 +179,6 @@ def main(argv):
     "\nAVERAGE TRAIN LOSS: " + str(sum(best_train_ces)/len(best_train_ces)) +
     "\nAVERAGE VALIDATION LOSS: " + str(sum(best_validation_ces)/len(best_validation_ces)) +
     "\nAVERAGE ACCURACY: " + str(sum(best_accuracies)/len(best_accuracies)) +
-    "\nAVERAGE CONFUSION MATRIX: \n" + str(sum(best_conf_mxs)/len(best_conf_mxs)) +
     "\n------------------------------------------\n")
 
     myfile.close()
