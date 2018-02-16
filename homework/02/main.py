@@ -163,9 +163,9 @@ def main(argv):
         #Collect best's
         best_epochs.append(best_epoch)
         best_train_ces.append(best_train_ce)
-        best_validation_ces.append(best_validation_ces)
+        best_validation_ces.append(best_validation_ce)
         best_accuracies.append(best_accuracy)
-        model_nos.append(model_nos)
+        model_nos.append(model_no)
         model_no += 1
 
     for model_no, epoch, train_ce, accuracy, validate_ce in zip(model_nos, best_epochs, best_train_ces, best_accuracies, best_validation_ces):
