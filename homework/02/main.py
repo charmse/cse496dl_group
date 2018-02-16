@@ -69,13 +69,12 @@ def main(argv):
     # specify the network
     x = tf.placeholder(tf.float32, [None, 16641], name='input_placeholder')
     output = model.make(x,arch)
-    tf.identity(output, name='output')
 
     # define classification loss
     y = tf.placeholder(tf.float32, [None, 7], name='label')
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=output)
     red_mean = tf.reduce_mean(cross_entropy)
-    confusion_matrix_op = tf.confusion_matrix(tf.argmax(y, axis=1), tf.argmax(output, axis=1), num_classes=10)
+    confusion_matrix_op = tf.confusion_matrix(tf.argmax(y, axis=1), tf.argmax(output, axis=1), num_classes=7)
     accuracy_op = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(output, axis=1), tf.argmax(y, axis=1)) , tf.float32))
 
     # set up training and saving functionality

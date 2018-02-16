@@ -58,4 +58,5 @@ def make(x,struct):
             flat_shape = int(np.prod(np.shape(block_output)[1:]))
             block_output = tf.reshape(block_output, [-1, flat_shape])
         output = tf.layers.dense(block_output, 7, name = 'output_layer')
+    tf.identity(output, name='output')
     return output

@@ -115,7 +115,7 @@ def dense_block(inputs, neurons, activs, regs, block_num):
             layer_name = block_name + "_dense_layer_" + str(layer_number)
             if(isinstance(r, float)):
                 layer = tf.layers.dense(layers[i-1], n, activation = a, name = layer_name)
-                dropout_layer = tf.layers.dropout(layer, r,name = layer_name + "dropout")
+                dropout_layer = tf.layers.dropout(layer, r,name = layer_name + "_dropout")
                 layers.append(layer)
                 layers.append(dropout_layer)
                 i += 2
