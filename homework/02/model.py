@@ -47,7 +47,10 @@ def make(x,struct):
             elif block_type == "C3":
                 if len(np.shape(block_output)) == 2:
                     shape = int(np.cbrt(int(np.shape(block_output)[1])))
-                    block_output = tf.reshape(block_output, [-1, shape, shape, 1])
+                    block_output = tf.reshape(block_output, [-1, shape, shape, shape, 1])
+                elif len(np.shape(block_output)) == 4:
+                    shape = int(np.cbrt(np.prod(np.shape(block_output)[1:])))
+                    block_output = tf.reshape(block_output, [-1, shape, shape, shape, 1])
                 block_output = util.conv3d_block(block_output, neurons_or_filters, kernels, activs, regs, conv_block_num)
                 conv_block_num += 1
             else:

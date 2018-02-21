@@ -15,6 +15,7 @@ flags.DEFINE_string('arch', 'C2:16,32,64;elu;l1;1.0;3;2|D:1000,500,250;elu;d;0.8
 flags.DEFINE_integer('early_stop', 6, '')
 flags.DEFINE_string('db', 'emodb', '')
 flags.DEFINE_integer('epoch_num', 100, '')
+flags.DEFINE_float('reg_coeff', 0.1, '')
 FLAGS = flags.FLAGS
 
 def main(argv):
@@ -25,6 +26,7 @@ def main(argv):
     learning_rate = FLAGS.lr
     early_stop = FLAGS.early_stop
     batch_size = FLAGS.batch_size
+    reg_coeff = FLAGS.reg_coeff
     if FLAGS.db == "savee":
         data_dir = FLAGS.data_dir + "SAVEE-British/"
         save_prefix = "savee_"
@@ -32,7 +34,7 @@ def main(argv):
         data_dir = FLAGS.data_dir + "EMODB-German/"
         save_prefix = "emodb_"
 
-    # load training data
+    # # load training data
     train_images_1 = np.load(data_dir + 'train_x_1.npy')
     train_images_2 = np.load(data_dir + 'train_x_2.npy')
     train_images_3 = np.load(data_dir + 'train_x_3.npy')
@@ -53,16 +55,16 @@ def main(argv):
     test_labels_4 = np.load(data_dir + 'test_y_4.npy')
 
     # split into train and validate
-    train_images_1, valid_images_1, train_labels_1, valid_labels_1 = util.split_data(train_images_1, train_labels_1, .90)
-    train_images_2, valid_images_2, train_labels_2, valid_labels_2 = util.split_data(train_images_2, train_labels_2, .90)
-    train_images_3, valid_images_3, train_labels_3, valid_labels_3 = util.split_data(train_images_3, train_labels_3, .90)
-    train_images_4, valid_images_4, train_labels_4, valid_labels_4 = util.split_data(train_images_4, train_labels_4, .90)
+    # train_images_1, valid_images_1, train_labels_1, valid_labels_1 = util.split_data(train_images_1, train_labels_1, .90)
+    # train_images_2, valid_images_2, train_labels_2, valid_labels_2 = util.split_data(train_images_2, train_labels_2, .90)
+    # train_images_3, valid_images_3, train_labels_3, valid_labels_3 = util.split_data(train_images_3, train_labels_3, .90)
+    # train_images_4, valid_images_4, train_labels_4, valid_labels_4 = util.split_data(train_images_4, train_labels_4, .90)
 
     #Create list of 
     train_images = [train_images_1, train_images_2, train_images_3, train_images_4]
     train_labels = [train_labels_1, train_labels_2, train_labels_3, train_labels_4]
-    valid_images = [valid_images_1, valid_images_2, valid_images_3, valid_images_4]
-    valid_labels = [valid_labels_1, valid_labels_2, valid_labels_3, valid_labels_4]
+    # valid_images = [valid_images_1, valid_images_2, valid_images_3, valid_images_4]
+    # valid_labels = [valid_labels_1, valid_labels_2, valid_labels_3, valid_labels_4]
     test_images = [test_images_1, test_images_2, test_images_3, test_images_4]
     test_labels = [test_labels_1, test_labels_2, test_labels_3, test_labels_4]
 
@@ -77,14 +79,20 @@ def main(argv):
     confusion_matrix_op = tf.confusion_matrix(tf.argmax(y, axis=1), tf.argmax(output, axis=1), num_classes=7)
     accuracy_op = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(output, axis=1), tf.argmax(y, axis=1)) , tf.float32))
 
+     #optimization
+    regularization_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+    # this is the weight of the regularization part of the final loss
+    # this value is what we'll pass to `minimize`
+    total_loss = cross_entropy + reg_coeff * sum(regularization_losses)
+
     # set up training and saving functionality
     global_step_tensor = tf.get_variable('global_step', trainable=False, shape=[], initializer=tf.zeros_initializer)
     optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
-    train_op = optimizer.minimize(cross_entropy, global_step=global_step_tensor)
+    train_op = optimizer.minimize(total_loss, global_step=global_step_tensor)
     saver = tf.train.Saver()
 
     #Open file to write to
-    myfile = open(save_dir + 'output/' + save_prefix + 'model_' + arch + '_' + str(learning_rate) + '_' + str(batch_size) + '_' + str(early_stop) + '_out.txt', 'w+')
+    myfile = open(save_dir + 'output/' + save_prefix + 'model_' + arch + '_' + str(learning_rate) + '_' + str(batch_size) + '_' + str(early_stop) + '_out.txt', 'a+')
     allfile = open('output/all_models_out.csv', 'a+')
 
     #Create lists to collect best models
