@@ -1,1 +1,1 @@
-Architecture,Model Number,Learning Rate,Early Stop,Batch Size,Epoch,Train Loss,Accuracy,Validation Loss
+Architecture,Model Number,Learning Rate,Early Stop,Batch Size,Epoch,Train Loss,Validation Accuracy,Validation Loss,Test Accuracy,Test Loss

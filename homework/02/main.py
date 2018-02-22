@@ -16,6 +16,7 @@ flags.DEFINE_integer('early_stop', 6, '')
 flags.DEFINE_string('db', 'emodb', '')
 flags.DEFINE_integer('epoch_num', 100, '')
 flags.DEFINE_float('reg_coeff', 0.001, '')
+flags.DEFINE_float('split', 0.90, '')
 FLAGS = flags.FLAGS
 
 def main(argv):
@@ -55,16 +56,16 @@ def main(argv):
     test_labels_4 = np.load(data_dir + 'test_y_4.npy')
 
     # split into train and validate
-    # train_images_1, valid_images_1, train_labels_1, valid_labels_1 = util.split_data(train_images_1, train_labels_1, .90)
-    # train_images_2, valid_images_2, train_labels_2, valid_labels_2 = util.split_data(train_images_2, train_labels_2, .90)
-    # train_images_3, valid_images_3, train_labels_3, valid_labels_3 = util.split_data(train_images_3, train_labels_3, .90)
-    # train_images_4, valid_images_4, train_labels_4, valid_labels_4 = util.split_data(train_images_4, train_labels_4, .90)
+    train_images_1, valid_images_1, train_labels_1, valid_labels_1 = util.split_data(train_images_1, train_labels_1, .90)
+    train_images_2, valid_images_2, train_labels_2, valid_labels_2 = util.split_data(train_images_2, train_labels_2, .90)
+    train_images_3, valid_images_3, train_labels_3, valid_labels_3 = util.split_data(train_images_3, train_labels_3, .90)
+    train_images_4, valid_images_4, train_labels_4, valid_labels_4 = util.split_data(train_images_4, train_labels_4, .90)
 
     #Create list of 
     train_images = [train_images_1, train_images_2, train_images_3, train_images_4]
     train_labels = [train_labels_1, train_labels_2, train_labels_3, train_labels_4]
-    # valid_images = [valid_images_1, valid_images_2, valid_images_3, valid_images_4]
-    # valid_labels = [valid_labels_1, valid_labels_2, valid_labels_3, valid_labels_4]
+    valid_images = [valid_images_1, valid_images_2, valid_images_3, valid_images_4]
+    valid_labels = [valid_labels_1, valid_labels_2, valid_labels_3, valid_labels_4]
     test_images = [test_images_1, test_images_2, test_images_3, test_images_4]
     test_labels = [test_labels_1, test_labels_2, test_labels_3, test_labels_4]
 
@@ -98,21 +99,24 @@ def main(argv):
     #Create lists to collect best models
     best_epochs = []
     best_train_ces = []
-    best_validation_ces = []
-    best_accuracies = []
+    best_valid_ces = []
+    best_valid_accuracies = []
     best_conf_mxs = []
+    test_ces = []
+    test_accuracies = []
+    test_conf_mxs = []
     model_nos = []
     model_no = 1
-    for train_images, train_labels, test_images, test_labels in zip(train_images, train_labels, test_images, test_labels):
+    for train_images, train_labels, valid_images, valid_labels, test_images, test_labels in zip(train_images, train_labels, valid_images, valid_labels, test_images, test_labels):
         train_num_examples = train_images.shape[0]
-        #valid_num_examples = valid_images.shape[0]
+        valid_num_examples = valid_images.shape[0]
         test_num_examples = test_images.shape[0]
         with tf.Session() as session:
 
             session.run(tf.global_variables_initializer())
 
             # run training
-            best_validation_ce = float("inf")
+            best_valid_ce = float("inf")
             count = 0
             for epoch in range(FLAGS.epoch_num):
 
@@ -125,31 +129,28 @@ def main(argv):
                     ce_vals.append(train_ce)
                 avg_train_ce = sum(ce_vals) / len(ce_vals)
 
-                accuracy_vals = []
+                valid_accuracy_vals = []
                 ce_vals = []
-                conf_mxs = []
-                for i in range(test_num_examples // batch_size):
-                    batch_xs = test_images[i*batch_size:(i+1)*batch_size, :]
-                    batch_ys = test_labels[i*batch_size:(i+1)*batch_size, :]       
-                    validate_ce, conf_matrix, accuracy = session.run([red_mean, confusion_matrix_op, accuracy_op], {x: batch_xs, y: batch_ys})
-                    ce_vals.append(validate_ce)
-                    conf_mxs.append(conf_matrix)
-                    accuracy_vals.append(accuracy)
-                avg_validation_ce = sum(ce_vals) / len(ce_vals)
-                avg_accuracy = sum(accuracy_vals) / len(accuracy_vals)
+                for i in range(valid_num_examples // batch_size):
+                    batch_xs = valid_images[i*batch_size:(i+1)*batch_size, :]
+                    batch_ys = valid_labels[i*batch_size:(i+1)*batch_size, :]       
+                    valid_ce, accuracy = session.run([red_mean, accuracy_op], {x: batch_xs, y: batch_ys})
+                    ce_vals.append(valid_ce)
+                    valid_accuracy_vals.append(accuracy)
+                avg_valid_ce = sum(ce_vals) / len(ce_vals)
+                avg_valid_accuracy = sum(valid_accuracy_vals) / len(valid_accuracy_vals)
 
                 myfile.write("Epoch: " + str(epoch) +
                 "\nTrain loss: " + str(avg_train_ce) +
-                "\nValidation loss: " + str(avg_validation_ce) +
-                "\nAccuracy: " + str(avg_accuracy) +
+                "\nValidation loss: " + str(avg_valid_ce) +
+                "\nAccuracy: " + str(avg_valid_accuracy) +
                 "\n------------------------------\n")
 
-                if avg_validation_ce < best_validation_ce:
-                    best_validation_ce = avg_validation_ce
+                if avg_valid_ce < best_valid_ce:
+                    best_valid_ce = avg_valid_ce
                     best_epoch = epoch
                     best_train_ce = avg_train_ce
-                    best_conf_mx = sum(conf_mxs)
-                    best_accuracy = avg_accuracy
+                    best_valid_accuracy = avg_valid_accuracy
                     best_model = saver.save(session, os.path.join(save_dir + "models/", save_prefix + "homework_2-0_" + arch + '_' + str(learning_rate) + '_' + str(batch_size) + '_' + str(early_stop) +  "_" + str(model_no)))
                     count = 0
                 else:
@@ -157,33 +158,60 @@ def main(argv):
 
                 if count > early_stop:
                     break
-
+            
             myfile.write("BEST VALIDATION CROSS-ENTROPY" +
             "\n-----------------------------" +
             "\nEPOCH: " + str(best_epoch) +
             "\nTRAIN LOSS: " + str(best_train_ce) +
-            "\nVALIDATION LOSS: " + str(best_validation_ce) +
-            "\nACCURACY: " + str(best_accuracy) +
-            "\nCONFUSION MATRIX: \n" + str(best_conf_mx) +
+            "\nVALIDATION LOSS: " + str(best_valid_ce) +
+            "\nACCURACY: " + str(best_valid_accuracy) +
             "\n------------------------------------------\n")
+
+            ce_vals = []
+            conf_mxs = []
+            test_accuracy_vals = []
+            for i in range(test_num_examples // batch_size):
+                batch_xs = test_images[i*batch_size:(i+1)*batch_size, :]
+                batch_ys = test_labels[i*batch_size:(i+1)*batch_size, :]       
+                test_ce, conf_matrix, test_accuracy = session.run([red_mean, confusion_matrix_op, accuracy_op], {x: batch_xs, y: batch_ys})
+                ce_vals.append(test_ce)
+                conf_mxs.append(conf_matrix)
+                test_accuracy_vals.append(test_accuracy)
+            avg_test_ce = sum(ce_vals) / len(ce_vals)
+            avg_test_accuracy = sum(test_accuracy_vals) / len(test_accuracy_vals)
+
+            myfile.write("TEST RESULTS" +
+            "\n-----------------------------" +
+            "\nTEST LOSS: " + str(avg_test_ce) +
+            "\nACCURACY: " + str(avg_test_accuracy) +
+            "\nCONFUSION MATRIX: \n" + str(sum(conf_mxs)) +
+            "\n------------------------------------------\n")
+
+
             
         #Collect best's
         best_epochs.append(best_epoch)
         best_train_ces.append(best_train_ce)
-        best_validation_ces.append(best_validation_ce)
-        best_accuracies.append(best_accuracy)
+        best_valid_ces.append(best_valid_ce)
+        best_valid_accuracies.append(best_valid_accuracy)
+        test_ces.append(avg_test_ce)
+        test_accuracies.append(avg_test_accuracy)
+        test_conf_mxs.append(sum(conf_mxs))
         model_nos.append(model_no)
         model_no += 1
 
-    for model_no, epoch, train_ce, accuracy, validate_ce in zip(model_nos, best_epochs, best_train_ces, best_accuracies, best_validation_ces):
-        allfile.write("\n{" + arch + '},' + str(model_no) + ',' + str(learning_rate) + ',' + str(early_stop) + ',' + str(batch_size) + ',' + str(epoch) + ',' + str(train_ce) + ',' + str(accuracy) + ',' + str(validate_ce))
+    for model_no, epoch, train_ce, valid_accuracy, validate_ce, test_accuracy, test_ce in zip(model_nos, best_epochs, best_train_ces, best_valid_accuracies, best_valid_ces, test_accuracies, test_ces):
+        allfile.write("{" + arch + '},' + str(model_no) + ',' + str(learning_rate) + ',' + str(early_stop) + ',' + str(batch_size) + ',' + str(epoch) + ',' + str(train_ce) + ',' + str(valid_accuracy) + ',' + str(validate_ce) + ',' + str(test_accuracy) + ',' + str(test_ce) +"\n")
 
-    myfile.write("AVERAGE BEST VALIDATION CROSS-ENTROPY" +
+    myfile.write("AVERAGE AND STANDARD DEVIATION OF CROSS VALIDATION" +
     "\n-----------------------------" +
-    "\nAVERAGE EPOCH: " + str(sum(best_epochs)/len(best_epochs)) +
-    "\nAVERAGE TRAIN LOSS: " + str(sum(best_train_ces)/len(best_train_ces)) +
-    "\nAVERAGE VALIDATION LOSS: " + str(sum(best_validation_ces)/len(best_validation_ces)) +
-    "\nAVERAGE ACCURACY: " + str(sum(best_accuracies)/len(best_accuracies)) +
+    "\nEPOCH: " + str(np.average(best_epochs)) + "  ,  " + str(np.std(best_epochs)) +
+    "\nTRAIN LOSS: " + str(np.average(best_train_ces)) + "  ,  " + str(np.std(best_epochs)) +
+    "\nVALIDATION LOSS: " + str(np.average(best_valid_ces)) + "  ,  " + str(np.std(best_epochs)) +
+    "\nVALIDATION ACCURACY: " + str(np.average(best_valid_accuracies)) + "  ,  " + str(np.std(best_epochs)) +
+    "\nTEST LOSS: " + str(np.average(test_ces)) + "  ,  " + str(np.std(best_epochs)) +
+    "\nTEST ACCURACY: " + str(np.average(test_accuracies)) + "  ,  " + str(np.std(best_epochs)) +
+    "\nCONFUSION MATRIX: \n" + str(sum(test_conf_mxs)) +
     "\n------------------------------------------\n")
 
     myfile.close()
