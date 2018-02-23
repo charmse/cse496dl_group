@@ -206,11 +206,11 @@ def main(argv):
     myfile.write("AVERAGE AND STANDARD DEVIATION OF CROSS VALIDATION" +
     "\n-----------------------------" +
     "\nEPOCH: " + str(np.average(best_epochs)) + "  ,  " + str(np.std(best_epochs)) +
-    "\nTRAIN LOSS: " + str(np.average(best_train_ces)) + "  ,  " + str(np.std(best_epochs)) +
-    "\nVALIDATION LOSS: " + str(np.average(best_valid_ces)) + "  ,  " + str(np.std(best_epochs)) +
-    "\nVALIDATION ACCURACY: " + str(np.average(best_valid_accuracies)) + "  ,  " + str(np.std(best_epochs)) +
-    "\nTEST LOSS: " + str(np.average(test_ces)) + "  ,  " + str(np.std(best_epochs)) +
-    "\nTEST ACCURACY: " + str(np.average(test_accuracies)) + "  ,  " + str(np.std(best_epochs)) +
+    "\nTRAIN LOSS: " + str(np.average(best_train_ces)) + "  ,  " + str(np.std(best_train_ces)) +
+    "\nVALIDATION LOSS: " + str(np.average(best_valid_ces)) + "  ,  " + str(np.std(best_valid_ces)) +
+    "\nVALIDATION ACCURACY: " + str(np.average(best_valid_accuracies)) + "  ,  " + str(np.std(best_valid_accuracies)) +
+    "\nTEST LOSS: " + str(np.average(test_ces)) + "  ,  " + str(np.std(test_ces)) +
+    "\nTEST ACCURACY: " + str(np.average(test_accuracies)) + "  ,  " + str(np.std(test_accuracies)) +
     "\nCONFUSION MATRIX: \n" + str(sum(test_conf_mxs)) +
     "\n------------------------------------------\n")
 
