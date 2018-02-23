@@ -28,6 +28,7 @@ def main(argv):
     early_stop = FLAGS.early_stop
     batch_size = FLAGS.batch_size
     reg_coeff = FLAGS.reg_coeff
+    split = FLAGS.split
     if FLAGS.db == "savee":
         data_dir = FLAGS.data_dir + "SAVEE-British/"
         save_prefix = "savee_"
@@ -56,10 +57,10 @@ def main(argv):
     test_labels_4 = np.load(data_dir + 'test_y_4.npy')
 
     # split into train and validate
-    train_images_1, valid_images_1, train_labels_1, valid_labels_1 = util.split_data(train_images_1, train_labels_1, .90)
-    train_images_2, valid_images_2, train_labels_2, valid_labels_2 = util.split_data(train_images_2, train_labels_2, .90)
-    train_images_3, valid_images_3, train_labels_3, valid_labels_3 = util.split_data(train_images_3, train_labels_3, .90)
-    train_images_4, valid_images_4, train_labels_4, valid_labels_4 = util.split_data(train_images_4, train_labels_4, .90)
+    train_images_1, valid_images_1, train_labels_1, valid_labels_1 = util.split_data(train_images_1, train_labels_1, split)
+    train_images_2, valid_images_2, train_labels_2, valid_labels_2 = util.split_data(train_images_2, train_labels_2, split)
+    train_images_3, valid_images_3, train_labels_3, valid_labels_3 = util.split_data(train_images_3, train_labels_3, split)
+    train_images_4, valid_images_4, train_labels_4, valid_labels_4 = util.split_data(train_images_4, train_labels_4, split)
 
     #Create list of 
     train_images = [train_images_1, train_images_2, train_images_3, train_images_4]
