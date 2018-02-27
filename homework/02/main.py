@@ -17,6 +17,7 @@ flags.DEFINE_string('db', 'emodb', '')
 flags.DEFINE_integer('epoch_num', 100, '')
 flags.DEFINE_float('reg_coeff', 0.001, '')
 flags.DEFINE_float('split', 0.90, '')
+flags.DEFINE_string('transfer', '', '')
 FLAGS = flags.FLAGS
 
 def main(argv):
@@ -29,12 +30,20 @@ def main(argv):
     batch_size = FLAGS.batch_size
     reg_coeff = FLAGS.reg_coeff
     split = FLAGS.split
+    transfer = FLAGS.transfer
     if FLAGS.db == "savee":
         data_dir = FLAGS.data_dir + "SAVEE-British/"
         save_prefix = "savee_"
     else:
         data_dir = FLAGS.data_dir + "EMODB-German/"
         save_prefix = "emodb_"
+
+    # specify the network
+    if bool(transfer):
+        x, output = model.transfer(save_dir + 'models/' + transfer)
+    else:
+        x = tf.placeholder(tf.float32, [None, 16641], name='input_placeholder')
+        output = model.make(x,arch)
 
     # # load training data
     train_images_1 = np.load(data_dir + 'train_x_1.npy')
@@ -70,9 +79,7 @@ def main(argv):
     test_images = [test_images_1, test_images_2, test_images_3, test_images_4]
     test_labels = [test_labels_1, test_labels_2, test_labels_3, test_labels_4]
 
-    # specify the network
-    x = tf.placeholder(tf.float32, [None, 16641], name='input_placeholder')
-    output = model.make(x,arch)
+    
 
     # define classification loss
     y = tf.placeholder(tf.float32, [None, 7], name='label')
