@@ -66,8 +66,9 @@ def make(x,struct):
 
 def transfer(model_name):
 
-    struct = model_name.split("_")
-    struct = struct[3].split("|")
+    struct = model_name.split("_")[3]
+    arch = struct
+    struct = struct.split("|")
     conv_block = struct[0].split(":")[1].split(";")
     dense_block = struct[1].split(":")[1].split(";")
     neurons_or_filters = list(map(int, dense_block[0].split(",")))
@@ -82,15 +83,15 @@ def transfer(model_name):
 
     conv_block_size = len(conv_block[0].split(","))
 
-    with tf.Session() as session:
-        saver = tf.train.import_meta_graph(model_name + '.meta')
-        saver.restore(session,model_name)
-        graph = session.graph
-        x = graph.get_tensor_by_name('input_placeholder:0')
-        conv_out = graph.get_tensor_by_name('homework_02_model/conv_block_1/max_pooling2d_'+str(conv_block_size)+'/MaxPool:0')
-        flat_shape = int(np.prod(np.shape(conv_out)[1:]))
-        conv_out = tf.reshape(tf.stop_gradient(conv_out),[-1, flat_shape])
-        block_output = util.dense_block(conv_out, neurons_or_filters, activs, regs, 'new')
-        output = tf.layers.dense(block_output, 7, name = 'output_layer')
+    session = tf.Session()
+    saver = tf.train.import_meta_graph(model_name + '.meta')
+    saver.restore(session,model_name)
+    graph = session.graph
+    x = graph.get_tensor_by_name('input_placeholder:0')
+    conv_out = graph.get_tensor_by_name('homework_02_model/conv_block_1/max_pooling2d_'+str(conv_block_size)+'/MaxPool:0')
+    flat_shape = int(np.prod(np.shape(conv_out)[1:]))
+    conv_out = tf.reshape(tf.stop_gradient(conv_out),[-1, flat_shape])
+    block_output = util.dense_block(conv_out, neurons_or_filters, activs, regs, 'new')
+    output = tf.layers.dense(block_output, 7, name = 'output_layer')
     tf.identity(output, name='output2')
-    return x, output
+    return x, output, session, arch
