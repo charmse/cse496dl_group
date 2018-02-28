@@ -90,7 +90,10 @@ def main(argv):
         regularization_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
         total_loss = cross_entropy + reg_coeff * sum(regularization_losses)
         #global_step_tensor = tf.get_variable('global_step', trainable=False, shape=[], initializer=tf.zeros_initializer)    
-        optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
+        if bool(transfer):
+            optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate, name = 'transfer_optimizer')
+        else:
+            optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
         train_op = optimizer.minimize(total_loss)
         confusion_matrix_op = tf.confusion_matrix(tf.argmax(y, axis=1), tf.argmax(output, axis=1), num_classes=7)
         accuracy_op = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(output, axis=1), tf.argmax(y, axis=1)) , tf.float32))
