@@ -87,12 +87,13 @@ def main(argv):
     with tf.name_scope(opt_name) as scope:
         cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=output)
         red_mean = tf.reduce_mean(cross_entropy)
-        regularization_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-        total_loss = cross_entropy + reg_coeff * sum(regularization_losses)
         #global_step_tensor = tf.get_variable('global_step', trainable=False, shape=[], initializer=tf.zeros_initializer)    
         if bool(transfer):
+            total_loss = cross_entropy
             optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate, name = 'transfer_optimizer')
         else:
+            regularization_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+            total_loss = cross_entropy + reg_coeff * sum(regularization_losses)
             optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
         train_op = optimizer.minimize(total_loss)
         confusion_matrix_op = tf.confusion_matrix(tf.argmax(y, axis=1), tf.argmax(output, axis=1), num_classes=7)
