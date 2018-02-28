@@ -92,6 +92,5 @@ def transfer(model_name):
     flat_shape = int(np.prod(np.shape(conv_out)[1:]))
     conv_out = tf.reshape(tf.stop_gradient(conv_out),[-1, flat_shape])
     block_output = util.dense_block(conv_out, neurons_or_filters, activs, regs, 'new')
-    output = tf.layers.dense(block_output, 7, name = 'output_layer')
-    tf.identity(output, name='output2')
+    output = tf.layers.dense(block_output, 7, name = 'output2')
     return x, output, session, arch
