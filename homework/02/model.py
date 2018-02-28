@@ -90,7 +90,7 @@ def transfer(model_name):
     x = graph.get_tensor_by_name('input_placeholder:0')
     conv_out = graph.get_tensor_by_name('homework_02_model/conv_block_1/max_pooling2d_'+str(conv_block_size)+'/MaxPool:0')
     flat_shape = int(np.prod(np.shape(conv_out)[1:]))
-    conv_out = tf.reshape(tf.stop_gradient(conv_out),[-1, flat_shape])
-    block_output = util.dense_block(conv_out, neurons_or_filters, activs, regs, 'new')
+    conv_out_no_gradient = tf.reshape(tf.stop_gradient(conv_out),[-1, flat_shape])
+    block_output = util.dense_block(conv_out_no_gradient, neurons_or_filters, activs, regs, 'new')
     output = tf.layers.dense(block_output, 7, name = 'output2')
-    return x, output, session, arch
+    return x, output, arch

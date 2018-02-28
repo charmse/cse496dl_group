@@ -40,11 +40,12 @@ def main(argv):
 
     # specify the network
     if bool(transfer):
-        x, output, session, arch = model.transfer(save_dir + 'models/' + transfer)
+        x, output, arch = model.transfer(save_dir + 'models/' + transfer)
+        opt_name = 'new_optimizer'
     else:
         x = tf.placeholder(tf.float32, [None, 16641], name='input_placeholder')
         output = model.make(x,arch)
-        session = tf.Session()
+        opt_name = 'optimizer'
 
     # # load training data
     train_images_1 = np.load(data_dir + 'train_x_1.npy')
@@ -83,20 +84,14 @@ def main(argv):
     # define classification loss
     y = tf.placeholder(tf.float32, [None, 7], name='label')
 
-    with tf.name_scope('optimizer') as scope:
+    with tf.name_scope(opt_name) as scope:
         cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=output)
         red_mean = tf.reduce_mean(cross_entropy)
         regularization_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
         total_loss = cross_entropy + reg_coeff * sum(regularization_losses)
-
-        global_step_tensor = tf.get_variable('global_step', trainable=False, shape=[], initializer=tf.zeros_initializer)
-        if bool(transfer):
-            optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate, name='optimizer')
-        else:
-            optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
-    
+        #global_step_tensor = tf.get_variable('global_step', trainable=False, shape=[], initializer=tf.zeros_initializer)    
+        optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
         train_op = optimizer.minimize(total_loss)
-
         confusion_matrix_op = tf.confusion_matrix(tf.argmax(y, axis=1), tf.argmax(output, axis=1), num_classes=7)
         accuracy_op = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(output, axis=1), tf.argmax(y, axis=1)) , tf.float32))
     
@@ -122,10 +117,10 @@ def main(argv):
         train_num_examples = train_images.shape[0]
         valid_num_examples = valid_images.shape[0]
         test_num_examples = test_images.shape[0]
-        with session as session:
+        with tf.Session() as session:
 
             if bool(transfer):
-                optimizer_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,"optimizer")
+                optimizer_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,"new_optimizer")
                 new_dense_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,"dense_block_new")
                 output_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,"output2")
                 session.run(tf.variables_initializer(optimizer_vars + new_dense_vars + output_vars))
