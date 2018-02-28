@@ -79,8 +79,6 @@ def main(argv):
     test_images = [test_images_1, test_images_2, test_images_3, test_images_4]
     test_labels = [test_labels_1, test_labels_2, test_labels_3, test_labels_4]
 
-    
-
     # define classification loss
     y = tf.placeholder(tf.float32, [None, 7], name='label')
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=output)
@@ -96,7 +94,11 @@ def main(argv):
 
     # set up training and saving functionality
     global_step_tensor = tf.get_variable('global_step', trainable=False, shape=[], initializer=tf.zeros_initializer)
-    optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
+    if bool(transfer):
+        optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate, name='new_optimizer')
+    else:
+        optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
+    
     train_op = optimizer.minimize(total_loss, global_step=global_step_tensor)
     saver = tf.train.Saver()
 
@@ -121,7 +123,13 @@ def main(argv):
         test_num_examples = test_images.shape[0]
         with tf.Session() as session:
 
-            session.run(tf.global_variables_initializer())
+            if bool(transfer):
+                optimizer_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,"new_optimizer")
+                new_dense_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,"dense_block_new")
+                output_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,"output2")
+                session.run(tf.variables_initializer(optimizer_vars + new_dense_vars + output_vars))
+            else:
+                session.run(tf.global_variables_initializer())
 
             # run training
             best_valid_ce = float("inf")
