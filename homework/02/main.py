@@ -123,13 +123,13 @@ def main(argv):
         test_num_examples = test_images.shape[0]
         with tf.Session() as session:
 
-            if bool(transfer):
-                optimizer_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,"new_optimizer")
-                new_dense_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,"dense_block_new")
-                output_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,"output2")
-                session.run(tf.variables_initializer(optimizer_vars + new_dense_vars + output_vars))
-            else:
-                session.run(tf.global_variables_initializer())
+            # if bool(transfer):
+            #     optimizer_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,"new_optimizer")
+            #     new_dense_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,"dense_block_new")
+            #     output_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,"output2")
+            #     session.run(tf.variables_initializer(optimizer_vars + new_dense_vars + output_vars))
+            # else:
+            session.run(tf.global_variables_initializer())
 
             # run training
             best_valid_ce = float("inf")
