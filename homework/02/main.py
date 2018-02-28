@@ -95,7 +95,7 @@ def main(argv):
         else:
             optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
     
-        train_op = optimizer.minimize(total_loss, global_step=global_step_tensor)
+        train_op = optimizer.minimize(total_loss)
 
         confusion_matrix_op = tf.confusion_matrix(tf.argmax(y, axis=1), tf.argmax(output, axis=1), num_classes=7)
         accuracy_op = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(output, axis=1), tf.argmax(y, axis=1)) , tf.float32))
