@@ -9,3 +9,7 @@ homework/02/*.pyc
 homework/02/models/*
 homework/02/SAVEE-British/*
 homework/02/EMODB-German/*
+homework/03/*.pyc
+homework/03/models/*.meta
+homework/03/models/*.index
+homework/03/models/*.data*
