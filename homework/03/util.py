@@ -344,6 +344,17 @@ def sep_conv2d_block(inputs, filters, kernels, activs, regs, block_num):
 
     return layers[i-1]
 
+def psnr(imageA, imageB):
+    # the 'Mean Squared Error' between the two images is the
+    # sum of the squared difference between the two images;
+    # NOTE: the two images must have the same dimension
+    err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
+    err /= float(imageA.shape[0] * imageA.shape[1])
+    # return the MSE, the lower the error, the more "similar"
+    # the two images are
+    psnr = 20*np.log10(255) - 10*np.log10(err)
+    return psnr
+
 def gaussian_encoder(inputs, latent_size):
     """inputs should be a tensor of images whose height and width are multiples of 4"""
     x = conv_block(inputs, 8, downscale=2)
