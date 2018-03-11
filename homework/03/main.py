@@ -53,7 +53,7 @@ def main(argv):
         opt_name = 'new_optimizer'
     elif bool(ae):
         pass
-        x = tf.placeholder(tf.float32, [None, 32, 32, 3], name='input_placeholder')
+        x = tf.placeholder(tf.float32, [None, 32, 32, 3], name='encoder_input')
         code, outputs, ae_name = model.autoencoder_network(x, code_size=code_size, model=ae)
         arch = 'AE'
     else:
@@ -90,6 +90,9 @@ def main(argv):
         train_num_examples = train_images.shape[0]
         #valid_num_examples = valid_images.shape[0]
         test_num_examples = test_images.shape[0]
+
+        
+        decoder_saver = tf.train.Saver()
 
         with tf.Session() as session:
             

@@ -1,2 +1,3 @@
 Name,Code Size,Sparsity Weight,Batch Size,Epoch,PSNR
 default,100,0.005,32,0,12.6103447254
+default,100,0.005,32,0,12.7244904462
