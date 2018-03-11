@@ -52,9 +52,7 @@ def main(argv):
         x, output, arch = model.transfer(save_dir + 'models/' + transfer)
         opt_name = 'new_optimizer'
     elif bool(ae):
-        pass
-        x = tf.placeholder(tf.float32, [None, 32, 32, 3], name='encoder_input')
-        code, outputs, ae_name = model.autoencoder_network(x, code_size=code_size, model=ae)
+        x, code, outputs, ae_name = model.autoencoder_network(code_size=code_size, model=ae)
         arch = 'AE'
     else:
         x = tf.placeholder(tf.float32, [None, 32, 32, 3], name='input_placeholder')
@@ -91,8 +89,8 @@ def main(argv):
         #valid_num_examples = valid_images.shape[0]
         test_num_examples = test_images.shape[0]
 
-        
-        decoder_saver = tf.train.Saver()
+        encoder_saver = tf.train.Saver(var_list=tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='encoder'))
+        decoder_saver = tf.train.Saver(var_list=tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='decoder'))
 
         with tf.Session() as session:
             
@@ -111,11 +109,14 @@ def main(argv):
                 x_out, code_out, output_out = session.run([x, code, outputs], {x: np.expand_dims(train_images[i], axis=0)})
                 psnr_list.append(util.psnr(train_images[i],output_out))
             avg_psnr = np.sum(psnr_list) / len(psnr_list)
+
+            encoder_saver.save(session, os.path.join(save_dir + "models/", "encoder_homework_3-0" + ae_name + '_' + str(code_size)  + '_' + str(batch_size)))
+            decoder_saver.save(session, os.path.join(save_dir + "models/", "decoder_homework_3-0" + ae_name + '_' + str(code_size)  + '_' + str(batch_size)))
         
         allfile = open('output/all_models_out.csv', 'a+')
         allfile.write(ae_name + ',' +str(code_size) + ',' + str(sparsity_weight) + ',' + str(batch_size) + ',' + str(epoch) + ',' + str(avg_psnr) +"\n")
         allfile.close()
-        
+
     else:
 
         with tf.name_scope(opt_name) as scope:
