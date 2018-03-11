@@ -2,6 +2,7 @@ import itertools as itr
 import tensorflow as tf 
 import numpy as np
 import util
+import sys
 
 def upscale_block(x, scale=2):
     """ conv2d_transpose """
@@ -103,17 +104,22 @@ def transfer(model_name):
     output = tf.layers.dense(block_output, 7, name = 'output2')
     return x, output, arch
 
-def autoencoder_network(x, code_size=100):
-    encoder_16 = downscale_block(x)
-    encoder_8 = downscale_block(encoder_16)
-    flatten_dim = np.prod(encoder_8.get_shape().as_list()[1:])
-    flat = tf.reshape(encoder_8, [-1, flatten_dim])
-    code_en = tf.layers.dense(flat, 96, activation=tf.nn.relu, name='encoder_output')
-    code = tf.layers.dense(code_en, code_size, activation=tf.nn.relu, name= 'code')
-    code_de = tf.layers.dense(code, 96, activation=tf.nn.relu, name='decoder_input')
-    hidden_decoder = tf.layers.dense(code_de, 192, activation=tf.nn.elu)
-    decoder_8 = tf.reshape(hidden_decoder, [-1, 8, 8, 3])
-    decoder_16 = upscale_block(decoder_8)
-    outputs = upscale_block(decoder_16)
-    tf.identity(outputs, name='decoder_output')
-    return code, outputs
+def autoencoder_network(x, code_size, model):
+    if(model == 'default'):
+        encoder_16 = downscale_block(x)
+        encoder_8 = downscale_block(encoder_16)
+        flatten_dim = np.prod(encoder_8.get_shape().as_list()[1:])
+        flat = tf.reshape(encoder_8, [-1, flatten_dim])
+        code_en = tf.layers.dense(flat, 96, activation=tf.nn.relu, name='encoder_output')
+        code = tf.layers.dense(code_en, code_size, activation=tf.nn.relu, name= 'code')
+        code_de = tf.layers.dense(code, 96, activation=tf.nn.relu, name='decoder_input')
+        hidden_decoder = tf.layers.dense(code_de, 192, activation=tf.nn.elu)
+        decoder_8 = tf.reshape(hidden_decoder, [-1, 8, 8, 3])
+        decoder_16 = upscale_block(decoder_8)
+        outputs = upscale_block(decoder_16)
+        tf.identity(outputs, name='decoder_output')
+        
+    else:
+        print("Error: Auto Encoder Model Not Found!")
+        sys.exit(1)
+    return code, outputs, model

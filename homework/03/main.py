@@ -7,7 +7,7 @@ import model
 import util
 
 flags = tf.app.flags
-flags.DEFINE_string('data_dir', '/work/cse496dl/shared/homework/02/', 'directory where MNIST is located')
+flags.DEFINE_string('data_dir', '', 'directory where MNIST is located')
 flags.DEFINE_string('save_dir', '', 'directory where model graph and weights are saved')
 flags.DEFINE_integer('batch_size', 32, '')
 flags.DEFINE_float('lr', 0.001, '')
@@ -20,6 +20,7 @@ flags.DEFINE_float('split', 0.90, '')
 flags.DEFINE_string('transfer', '', '')
 flags.DEFINE_string('ae', '', '')
 flags.DEFINE_integer('code_size', 100, '')
+flags.DEFINE_float('sparsity_weight', 5e-3, '')
 FLAGS = flags.FLAGS
 
 def main(argv):
@@ -35,12 +36,16 @@ def main(argv):
     transfer = FLAGS.transfer
     ae = FLAGS.ae
     code_size = FLAGS.code_size
+    sparsity_weight = FLAGS.sparsity_weight
     if FLAGS.db == "savee":
         data_dir = FLAGS.data_dir + "SAVEE-British/"
         save_prefix = "savee_"
-    else:
+    elif FLAGS.db == 'emodb':
         data_dir = FLAGS.data_dir + "EMODB-German/"
         save_prefix = "emodb_"
+    else:
+        data_dir = FLAGS.data_dir + "cifar-100/"
+        save_prefix = "cifar-100_"
 
     # specify the network
     if bool(transfer):
@@ -49,7 +54,8 @@ def main(argv):
     elif bool(ae):
         pass
         x = tf.placeholder(tf.float32, [None, 32, 32, 3], name='input_placeholder')
-        code, outputs = model.autoencoder_network(x, code_size=code_size)
+        code, outputs, ae_name = model.autoencoder_network(x, code_size=code_size, model=ae)
+        arch = 'AE'
     else:
         x = tf.placeholder(tf.float32, [None, 32, 32, 3], name='input_placeholder')
         output = model.make(x,arch)
@@ -57,14 +63,14 @@ def main(argv):
     
 
     # # load training data
-    train_images = np.load(data_dir + 'train_x_1.npy')
-    train_labels = np.load(data_dir + 'train_y_1.npy')
+    train_images = np.load(data_dir + 'x_train.npy')
+    train_labels = np.load(data_dir + 'y_train.npy')
     # load testing data
-    test_images = np.load(data_dir + 'test_x_1.npy')
-    test_labels = np.load(data_dir + 'test_y_1.npy')
+    test_images = np.load(data_dir + 'x_test.npy')
+    test_labels = np.load(data_dir + 'y_test.npy')
 
     # split into train and validate
-    train_images, valid_images, train_labels, valid_labels = util.split_data(train_images, train_labels, split)
+    #train_images, valid_images, train_labels, valid_labels = util.split_data(train_images, train_labels, split)
 
 
     # define classification loss
@@ -72,6 +78,41 @@ def main(argv):
 
     if bool(ae):
 
+        # calculate loss
+        sparsity_loss = tf.norm(code, ord=1, axis=1)
+        reconstruction_loss = tf.reduce_mean(tf.square(outputs - x)) # MSE
+        total_loss = reconstruction_loss + sparsity_weight * sparsity_loss
+
+        # setup optimizer
+        optimizer = tf.train.AdamOptimizer()
+        train_op = optimizer.minimize(total_loss)
+
+        train_num_examples = train_images.shape[0]
+        #valid_num_examples = valid_images.shape[0]
+        test_num_examples = test_images.shape[0]
+
+        with tf.Session() as session:
+            
+            #initialize variables
+            session.run(tf.global_variables_initializer())
+
+            #Train
+            for epoch in range(FLAGS.epoch_num):
+                for i in range(train_num_examples // batch_size):
+                    batch_xs = train_images[i*batch_size:(i+1)*batch_size, :]
+                    session.run(train_op, {x: batch_xs})
+
+            #Run a test
+            psnr_list = []
+            for i in range(test_num_examples): 
+                x_out, code_out, output_out = session.run([x, code, outputs], {x: np.expand_dims(train_images[i], axis=0)})
+                psnr_list.append(util.psnr(train_images[i],output_out))
+            avg_psnr = np.sum(psnr_list) / len(psnr_list)
+        
+        allfile = open('output/all_models_out.csv', 'a+')
+        allfile.write(ae_name + ',' +str(code_size) + ',' + str(sparsity_weight) + ',' + str(batch_size) + ',' + str(epoch) + ',' + str(avg_psnr) +"\n")
+        allfile.close()
+        
     else:
 
         with tf.name_scope(opt_name) as scope:
