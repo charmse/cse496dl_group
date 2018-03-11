@@ -104,13 +104,16 @@ def transfer(model_name):
     return x, output, arch
 
 def autoencoder_network(x, code_size=100):
-    encoder_14 = downscale_block(x)
-    encoder_7 = downscale_block(encoder_14)
-    flatten_dim = np.prod(encoder_7.get_shape().as_list()[1:])
-    flat = tf.reshape(encoder_7, [-1, flatten_dim])
-    code = tf.layers.dense(flat, code_size, activation=tf.nn.relu)
-    hidden_decoder = tf.layers.dense(code, 49, activation=tf.nn.elu)
-    decoder_7 = tf.reshape(hidden_decoder, [-1, 7, 7, 1])
-    decoder_14 = upscale_block(decoder_7)
-    output = upscale_block(decoder_14)
-    return code, output
+    encoder_16 = downscale_block(x)
+    encoder_8 = downscale_block(encoder_16)
+    flatten_dim = np.prod(encoder_8.get_shape().as_list()[1:])
+    flat = tf.reshape(encoder_8, [-1, flatten_dim])
+    code_en = tf.layers.dense(flat, 96, activation=tf.nn.relu, name='encoder_output')
+    code = tf.layers.dense(code_en, code_size, activation=tf.nn.relu, name= 'code')
+    code_de = tf.layers.dense(code, 96, activation=tf.nn.relu, name='decoder_input')
+    hidden_decoder = tf.layers.dense(code_de, 192, activation=tf.nn.elu)
+    decoder_8 = tf.reshape(hidden_decoder, [-1, 8, 8, 3])
+    decoder_16 = upscale_block(decoder_8)
+    outputs = upscale_block(decoder_16)
+    tf.identity(outputs, name='decoder_output')
+    return code, outputs
