@@ -110,8 +110,10 @@ def main(argv):
                 psnr_list.append(util.psnr(train_images[i],output_out))
             avg_psnr = np.sum(psnr_list) / len(psnr_list)
 
-            encoder_saver.save(session, os.path.join(save_dir + "models/", "encoder_homework_3-0" + ae_name + '_' + str(code_size)  + '_' + str(batch_size)))
-            decoder_saver.save(session, os.path.join(save_dir + "models/", "decoder_homework_3-0" + ae_name + '_' + str(code_size)  + '_' + str(batch_size)))
+            encoder_saver.save(session, os.path.join(save_dir + "models/", "maxquality_encoder_homework_3-0"))
+            decoder_saver.save(session, os.path.join(save_dir + "models/", "maxquality_decoder_homework_3-0"))
+            encoder_saver.save(session, os.path.join(save_dir + "models/", "maxcompression_encoder_homework_3-0"))
+            decoder_saver.save(session, os.path.join(save_dir + "models/", "maxcompression_decoder_homework_3-0"))
         
         allfile = open('output/all_models_out.csv', 'a+')
         allfile.write(ae_name + ',' +str(code_size) + ',' + str(sparsity_weight) + ',' + str(batch_size) + ',' + str(epoch) + ',' + str(avg_psnr) +"\n")
