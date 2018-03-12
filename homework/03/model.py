@@ -6,10 +6,10 @@ import sys
 
 def upscale_block(x, filter=3, scale=2):
     """ conv2d_transpose """
-    return tf.layers.conv2d_transpose(x, filter, 3, strides=(scale, scale), padding='same', activation=tf.nn.relu)
+    return tf.layers.conv2d_transpose(x, filter, 3, strides=(scale, scale), padding='same', activation=tf.nn.elu)
 
 def downscale_block(x, filter=3, scale=2):
-    return tf.layers.conv2d(x, filter, 3, strides=scale, padding='same')
+    return tf.layers.conv2d(x, filter, 3, strides=scale, padding='same',activation = tf.nn.elu)
 
 def make(x,struct):
     """
@@ -103,24 +103,26 @@ def transfer(model_name):
     output = tf.layers.dense(block_output, 7, name = 'output2')
     return x, output, arch
 
-def autoencoder_network(code_size, model):
+def autoencoder_network(x, code_size, model):
     if(model == 'default'):
+        #x = tf.placeholder(tf.float32, [None, 32, 32, 3], name='encoder_input')
         with tf.variable_scope("encoder"):
-            x = tf.placeholder(tf.float32, [None, 32, 32, 3], name='encoder_input')
             encoder_16 = downscale_block(x, filter=np.floor(x.get_shape().as_list()[3] * 1.25))
             encoder_8 = downscale_block(encoder_16, filter=np.floor(encoder_16.get_shape().as_list()[3] * 1.25))
             flatten_dim = np.prod(encoder_8.get_shape().as_list()[1:])
             flat = tf.reshape(encoder_8, [-1, flatten_dim])
-            code_en = tf.layers.dense(flat, 96, activation=tf.nn.relu)
-            code = tf.layers.dense(code_en, code_size, activation=tf.nn.relu, name='encoder_output')
+            code_en = tf.layers.dense(flat, 96, activation=tf.nn.elu)
+            code = tf.layers.dense(code_en, code_size, activation=tf.nn.elu)
+        tf.identity(code,name='encoder_output')
+        code_de = tf.placeholder(tf.float32, [None, code_size], name='decoder_input')
+        code_de = tf.layers.dense(code, 96, activation=tf.nn.elu)
         with tf.variable_scope("decoder"):
-            code_de = tf.layers.dense(code, 96, activation=tf.nn.relu, name='decoder_input')
             hidden_decoder = tf.layers.dense(code_de, 192, activation=tf.nn.elu)
             decoder_8 = tf.reshape(hidden_decoder, [-1, 8, 8, 3])
-            decoder_16 = upscale_block(decoder_8)
-            outputs = upscale_block(decoder_16)
-            tf.identity(outputs, name='decoder_output')
+            decoder_8 = upscale_block(decoder_8)
+            outputs = upscale_block(decoder_8)
+        tf.identity(outputs, name='decoder_output')
     else:
         print("Error: Auto Encoder Model Not Found!")
         sys.exit(1)
-    return x, code, outputs, model
+    return x,code, outputs, model
