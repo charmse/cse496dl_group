@@ -12,7 +12,7 @@ flags.DEFINE_string('save_dir', '', 'directory where model graph and weights are
 flags.DEFINE_integer('batch_size', 32, '')
 flags.DEFINE_float('lr', 0.001, '')
 flags.DEFINE_string('arch', 'C2:16,32,64;elu;l1;1.0;3;2|D:1000,500,250;elu;d;0.8', '')
-flags.DEFINE_integer('early_stop', 6, '')
+flags.DEFINE_integer('early_stop', 12, '')
 flags.DEFINE_string('db', 'emodb', '')
 flags.DEFINE_integer('epoch_num', 100, '')
 flags.DEFINE_float('reg_coeff', 0.001, '')
@@ -68,8 +68,7 @@ def main(argv):
     test_labels = np.load(data_dir + 'y_test.npy')
 
     # split into train and validate
-    #train_images, valid_images, train_labels, valid_labels = util.split_data(train_images, train_labels, split)
-
+    train_images, valid_images, train_labels, valid_labels = util.split_data(train_images, train_labels, split)
 
     # define classification loss
     y = tf.placeholder(tf.float32, [None, 100], name='label')
@@ -86,7 +85,7 @@ def main(argv):
         train_op = optimizer.minimize(total_loss)
 
         train_num_examples = train_images.shape[0]
-        #valid_num_examples = valid_images.shape[0]
+        valid_num_examples = valid_images.shape[0]
         test_num_examples = test_images.shape[0]
 
         encoder_saver = tf.train.Saver(var_list=tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='encoder'))
@@ -97,11 +96,37 @@ def main(argv):
             #initialize variables
             session.run(tf.global_variables_initializer())
 
-            #Train
+            best_valid_loss = float("inf")
+            count = 0
             for epoch in range(FLAGS.epoch_num):
+                
+                #Train
                 for i in range(train_num_examples // batch_size):
                     batch_xs = train_images[i*batch_size:(i+1)*batch_size, :]
                     session.run(train_op, {x: batch_xs})
+                
+                #Validate
+                valid_loss = []
+                for i in range(valid_num_examples // batch_size):
+                    batch_xs = valid_images[i*batch_size:(i+1)*batch_size, :]
+                    loss = session.run(total_loss, {x: batch_xs})
+                    valid_loss.append(loss)
+                avg_valid_loss = np.sum(valid_loss) / len(valid_loss)
+                
+                #Early Stopping
+                if avg_valid_loss < best_valid_loss:
+                    best_valid_loss = avg_valid_loss
+                    best_epoch = epoch
+                    count = 0
+                    encoder_saver.save(session, os.path.join(save_dir + "models/", "maxquality_encoder_homework_3-0"))
+                    decoder_saver.save(session, os.path.join(save_dir + "models/", "maxquality_decoder_homework_3-0"))
+                    encoder_saver.save(session, os.path.join(save_dir + "models/", "maxcompression_encoder_homework_3-0"))
+                    decoder_saver.save(session, os.path.join(save_dir + "models/", "maxcompression_decoder_homework_3-0"))
+                else:
+                    count += 1
+
+                if count > early_stop:
+                    break
 
             #Run a test
             psnr_list = []
@@ -109,11 +134,6 @@ def main(argv):
                 x_out, code_out, output_out = session.run([x, code, outputs], {x: np.expand_dims(train_images[i], axis=0)})
                 psnr_list.append(util.psnr(train_images[i],output_out))
             avg_psnr = np.sum(psnr_list) / len(psnr_list)
-
-            encoder_saver.save(session, os.path.join(save_dir + "models/", "maxquality_encoder_homework_3-0"))
-            decoder_saver.save(session, os.path.join(save_dir + "models/", "maxquality_decoder_homework_3-0"))
-            encoder_saver.save(session, os.path.join(save_dir + "models/", "maxcompression_encoder_homework_3-0"))
-            decoder_saver.save(session, os.path.join(save_dir + "models/", "maxcompression_decoder_homework_3-0"))
         
         allfile = open('output/all_models_out.csv', 'a+')
         allfile.write(ae_name + ',' +str(code_size) + ',' + str(sparsity_weight) + ',' + str(batch_size) + ',' + str(epoch) + ',' + str(avg_psnr) +"\n")
