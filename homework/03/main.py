@@ -125,7 +125,7 @@ def main(argv):
         psnr_list = []
         for i in range(test_num_examples): 
             x_out, code_out, output_out = session.run([x, code, outputs], {x: np.expand_dims(train_images[i], axis=0)})
-            psnr_list.append(util.psnr(train_images[i],train_images[i]))
+            psnr_list.append(util.psnr(train_images[i],output_out))
         avg_psnr = np.sum(psnr_list) / len(psnr_list)
 
         if not validate:
