@@ -54,7 +54,8 @@ def main(argv):
         x, output, arch = model.transfer(save_dir + 'models/' + transfer)
         opt_name = 'new_optimizer'
     elif bool(ae):
-        x, code, outputs, ae_name = model.autoencoder_network(code_size=code_size, model=ae)
+        x = tf.placeholder(tf.float32, [None, 32, 32, 3], name='encoder_input')
+        code, outputs, ae_name = model.autoencoder_network(x, code_size=code_size, model=ae)
         arch = 'AE'
     else:
         x = tf.placeholder(tf.float32, [None, 32, 32, 3], name='input_placeholder')
@@ -70,7 +71,7 @@ def main(argv):
     test_labels = np.load(data_dir + 'y_test.npy')
 
     # split into train and validate
-    if validate:]
+    if validate:
         train_images, valid_images, train_labels, valid_labels = util.split_data(train_images, train_labels, split)
         valid_num_examples = valid_images.shape[0]
     train_num_examples = train_images.shape[0]
@@ -90,8 +91,8 @@ def main(argv):
         optimizer = tf.train.AdamOptimizer()
         train_op = optimizer.minimize(total_loss)
 
-        encoder_saver = tf.train.Saver(var_list=tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='encoder'))
-        decoder_saver = tf.train.Saver(var_list=tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='decoder'))
+        encoder_saver = tf.train.Saver()
+        decoder_saver = tf.train.Saver()
 
         with tf.Session() as session:
             
