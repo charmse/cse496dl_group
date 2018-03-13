@@ -15,18 +15,11 @@ def autoencoder_network(x, code_size, model):
     
     if(model == 'default'):
         #x = tf.placeholder(tf.float32, [None, 32, 32, 3], name='encoder_input')
-        encoder_16 = downscale_block(x, filter=np.floor(x.get_shape().as_list()[3] * 1.25))
-        encoder_8 = downscale_block(encoder_16, filter=np.floor(encoder_16.get_shape().as_list()[3] * 1.25))
-        flatten_dim = np.prod(encoder_8.get_shape().as_list()[1:])
-        flat = tf.reshape(encoder_8, [-1, flatten_dim])
-        code_en = tf.layers.dense(flat, 96, activation=tf.nn.elu)
-        code = tf.layers.dense(code_en, code_size, activation=tf.nn.elu)
+        flatten_dim = np.prod(x.get_shape().as_list()[1:])
+        flat = tf.reshape(x, [-1, flatten_dim])
+        code = tf.layers.dense(flat, flat.get_shape.as_list()[1], activation=tf.nn.elu)
         decoder_input = tf.identity(code, 'decoder_input')
-        code_de = tf.layers.dense(decoder_input, 96, activation=tf.nn.elu)
-        hidden_decoder = tf.layers.dense(code_de, 192, activation=tf.nn.elu)
-        decoder_8 = tf.reshape(hidden_decoder, [-1, 8, 8, 3])
-        decoder_8 = upscale_block(decoder_8)
-        outputs = upscale_block(decoder_8)
+        outputs = tf.reshape(decoder_input, [-1, 32, 32, 3])
         tf.identity(outputs, name='decoder_output')
     elif(model == 'maxcompression'):
         en_conv_64 = tf.layers.conv2d(x, 64, 3, strides=2, padding='same',activation = tf.nn.elu)
