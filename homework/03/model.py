@@ -28,13 +28,13 @@ def autoencoder_network(x, code_size, model):
         tf.identity(outputs, name='decoder_output')
     elif(model == 'maxcompression'):
         #x = tf.placeholder(tf.float32, [None, 32, 32, 3], name='encoder_input')
-<<<<<<< HEAD
+
         # flatten_dim = np.prod(x.get_shape().as_list()[1:])
         # flat = tf.reshape(x, [-1, flatten_dim])
         # code = tf.layers.dense(flat, flat.get_shape.as_list()[1], activation=tf.nn.elu)
         # decoder_input = tf.identity(code, 'decoder_input')
         # outputs = tf.reshape(decoder_input, [-1, 32, 32, 3])
-=======
+
         encoder_16 = downscale_block(x, filter=np.floor(x.get_shape().as_list()[3] * 1.25))
         #encoder_8 = downscale_block(encoder_16, filter=np.floor(encoder_16.get_shape().as_list()[3] * 1.25))
         #encoder_4 = downscale_block(encoder_8, filter = np.floor(encoder_8.get_shape().as_list()[3] * 1.25))
@@ -54,7 +54,6 @@ def autoencoder_network(x, code_size, model):
         #decoder_8 = upscale_block(decoder_4)
         #decoder_16 = upscale_block(decoder_8)
         outputs = upscale_block(decoder_16)
->>>>>>> 8040918331c74d1cbf7c9697d5e80ebb16f8bc7d
         tf.identity(outputs, name='decoder_output')
     else:
         print("Error: Auto Encoder Model Not Found!")
