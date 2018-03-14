@@ -102,14 +102,3 @@ def flatten(inputs):
     else:
         size = inputs.get_shape().as_list()[1:]
         return tf.reshape(inputs, [-1, size])
-    
-def bernoulli_logp(alpha, sample):
-    """Calculates log prob of sample under bernoulli distribution.
-    
-    Note: args must be in range [0,1]
-    """
-    alpha = flatten(alpha)
-    sample = flatten(sample)
-    re_x = tf.nn.relu(flatten(re_x))
-    return tf.reduce_sum(x_in * tf.log(EPS + re_x) +
-                         ((1 - x_in) * tf.log(EPS + 1 - re_x)), 1)
