@@ -7,7 +7,7 @@ import model
 import util
 
 flags = tf.app.flags
-flags.DEFINE_string('data_dir', '', 'directory where MNIST is located')
+flags.DEFINE_string('data_dir', 'cifar-100', 'directory where MNIST is located')
 flags.DEFINE_string('train_dir', '', 'directory where training data is location')
 flags.DEFINE_string('test_dir', '', '')
 flags.DEFINE_string('save_dir', '', 'directory where model graph and weights are saved')
@@ -15,11 +15,11 @@ flags.DEFINE_integer('batch_size', 10, '')
 flags.DEFINE_float('lr', 0.001, '')
 flags.DEFINE_integer('early_stop', 12, '')
 flags.DEFINE_string('db', 'cifar-100', '')
-flags.DEFINE_integer('epoch_num', 100, '')
+flags.DEFINE_integer('epoch_num', 50, '')
 flags.DEFINE_float('reg_coeff', 0.001, '')
 flags.DEFINE_float('split', 0.90, '')
 flags.DEFINE_string('transfer', '', '')
-flags.DEFINE_string('ae', 'default', '')
+flags.DEFINE_string('ae', '1&2', '')
 flags.DEFINE_integer('code_size', 100, '')
 flags.DEFINE_float('sparsity_weight', 5e-3, '')
 flags.DEFINE_boolean('validate', False, '')
@@ -51,11 +51,11 @@ def main(argv):
     tf.identity(code, 'encoder_output')
     
     # # load training data
-    train_images = np.load(train_dir + 'x_train.npy')
-    train_labels = np.load(train_dir + 'y_train.npy')
+    train_images = np.load(train_dir + '/x_train.npy')
+    train_labels = np.load(train_dir + '/y_train.npy')
     # load testing data
-    test_images = np.load(test_dir + 'x_test.npy')
-    test_labels = np.load(test_dir + 'y_test.npy')
+    test_images = np.load(test_dir + '/x_test.npy')
+    test_labels = np.load(test_dir + '/y_test.npy')
 
     # split into train and validate
     if validate:
