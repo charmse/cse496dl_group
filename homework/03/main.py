@@ -11,11 +11,10 @@ flags.DEFINE_string('data_dir', '', 'directory where MNIST is located')
 flags.DEFINE_string('train_dir', '', 'directory where training data is location')
 flags.DEFINE_string('test_dir', '', '')
 flags.DEFINE_string('save_dir', '', 'directory where model graph and weights are saved')
-flags.DEFINE_integer('batch_size', 32, '')
+flags.DEFINE_integer('batch_size', 10, '')
 flags.DEFINE_float('lr', 0.001, '')
-flags.DEFINE_string('arch', 'C2:16,32,64;elu;l1;1.0;3;2|D:1000,500,250;elu;d;0.8', '')
 flags.DEFINE_integer('early_stop', 12, '')
-flags.DEFINE_string('db', 'emodb', '')
+flags.DEFINE_string('db', 'cifar-100', '')
 flags.DEFINE_integer('epoch_num', 100, '')
 flags.DEFINE_float('reg_coeff', 0.001, '')
 flags.DEFINE_float('split', 0.90, '')
@@ -28,8 +27,7 @@ FLAGS = flags.FLAGS
 
 def main(argv):
 
-    # Set arguments:  Save_Dir Structure Learning_Rate Earling_Stoping Batch_Size Data_Dir    
-    arch = FLAGS.arch
+    # Set arguments  
     save_dir = FLAGS.save_dir
     data_dir = FLAGS.data_dir
     learning_rate = FLAGS.lr
@@ -51,9 +49,7 @@ def main(argv):
     x = tf.placeholder(tf.float32, [None, 32, 32, 3], name='encoder_input')
     code, outputs, ae_name = model.autoencoder_network(x, code_size=code_size, model=ae)
     tf.identity(code, 'encoder_output')
-    arch = 'AE'
     
-
     # # load training data
     train_images = np.load(train_dir + 'x_train.npy')
     train_labels = np.load(train_dir + 'y_train.npy')
