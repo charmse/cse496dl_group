@@ -13,3 +13,6 @@ homework/03/*.pyc
 homework/03/models/*
 homework/03/output/all_models_out.csv
 homework/03/cifar-100/*
+homework/04/*.pyc
+homework/04/models/*
+homework/04/output/all_models_out.csv
