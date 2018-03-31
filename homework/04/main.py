@@ -49,6 +49,8 @@ def main(argv):
     #print("The time distributed training data: " + str(train_input.input_data))
     #print("The similarly distributed targets: " + str(train_input.targets))
 
+    test_input = PTBInput(test_data,BATCH_SIZE,TIME_STEPS,name="TestInput")
+
     # setup input and embedding
     embedding_matrix = tf.get_variable('embedding_matrix', dtype=tf.float32, shape=[VOCAB_SIZE, EMBEDDING_SIZE], trainable=True)
     word_embeddings = tf.nn.embedding_lookup(embedding_matrix, train_input.input_data)
