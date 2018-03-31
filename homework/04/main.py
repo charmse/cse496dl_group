@@ -5,134 +5,135 @@ import os
 import sys
 import model
 import util
+import ptb_reader
 
 flags = tf.app.flags
-flags.DEFINE_string('data_dir', 'cifar-100', 'directory where MNIST is located')
+flags.DEFINE_string('data_dir', '/work/cse496dl/shared/hackathon/08/ptbdata', 'directory where MNIST is located')
 flags.DEFINE_string('train_dir', '', 'directory where training data is location')
 flags.DEFINE_string('test_dir', '', '')
 flags.DEFINE_string('save_dir', '', 'directory where model graph and weights are saved')
-flags.DEFINE_integer('batch_size', 10, '')
-flags.DEFINE_float('lr', 0.001, '')
+flags.DEFINE_integer('batch_size', 20, '')
+flags.DEFINE_float('lr', 1e-4, '')
 flags.DEFINE_integer('early_stop', 12, '')
 flags.DEFINE_string('db', 'cifar-100', '')
-flags.DEFINE_integer('epoch_num', 50, '')
+flags.DEFINE_integer('epochs', 1, '')
 flags.DEFINE_float('reg_coeff', 0.001, '')
 flags.DEFINE_float('split', 0.90, '')
-flags.DEFINE_string('transfer', '', '')
-flags.DEFINE_string('ae', '1&2', '')
-flags.DEFINE_integer('code_size', 100, '')
-flags.DEFINE_float('sparsity_weight', 5e-3, '')
-flags.DEFINE_boolean('validate', False, '')
+flags.DEFINE_integer('time_steps', 25, '')
+flags.DEFINE_integer('vocab_size', 10000, '')
+flags.DEFINE_integer('embedding_size', 100, '')
+flags.DEFINE_integer('lstm_size', 200, '')
 FLAGS = flags.FLAGS
 
 def main(argv):
 
     # Set arguments  
-    save_dir = FLAGS.save_dir
-    data_dir = FLAGS.data_dir
-    learning_rate = FLAGS.lr
+    EPOCHS = FLAGS.epochs
+    DATA_DIR = FLAGS.data_dir
+    LEARNING_RATE = FLAGS.lr
     early_stop = FLAGS.early_stop
-    batch_size = FLAGS.batch_size
+    BATCH_SIZE = FLAGS.batch_size
     reg_coeff = FLAGS.reg_coeff
-    split = FLAGS.split
-    transfer = FLAGS.transfer
-    ae = FLAGS.ae
-    code_size = FLAGS.code_size
-    sparsity_weight = FLAGS.sparsity_weight
-    validate = FLAGS.validate
+    TIME_STEPS = FLAGS.time_steps
+    VOCAB_SIZE = FLAGS.vocab_size
+    EMBEDDING_SIZE = FLAGS.embedding_size
+    LSTM_SIZE = FLAGS.lstm_size
     train_dir = FLAGS.train_dir
     test_dir = FLAGS.test_dir
-    if not bool(test_dir) :
-        test_dir = data_dir
-        train_dir = data_dir
 
-    x = tf.placeholder(tf.float32, [None, 32, 32, 3], name='encoder_input')
-    code, outputs, ae_name = model.autoencoder_network(x, code_size=code_size, model=ae)
-    tf.identity(code, 'encoder_output')
+    sys.path.append("/work/cse496dl/shared/hackathon/08")
+
+    raw_data = ptb_reader.ptb_raw_data(DATA_DIR)
+    train_data, valid_data, test_data, _ = raw_data
+    train_input = PTBInput(train_data, BATCH_SIZE, TIME_STEPS, name="TrainInput")
+    #print("The time distributed training data: " + str(train_input.input_data))
+    #print("The similarly distributed targets: " + str(train_input.targets))
+
+    # setup input and embedding
+    embedding_matrix = tf.get_variable('embedding_matrix', dtype=tf.float32, shape=[VOCAB_SIZE, EMBEDDING_SIZE], trainable=True)
+    word_embeddings = tf.nn.embedding_lookup(embedding_matrix, train_input.input_data)
+    #print("The output of the word embedding: " + str(word_embeddings))
+
+    lstm_cell = tf.contrib.rnn.BasicLSTMCell(LSTM_SIZE)
+
+    # Initial state of the LSTM memory.
+    initial_state = lstm_cell.zero_state(BATCH_SIZE, tf.float32)
     
-    # # load training data
-    train_images = np.load(train_dir + '/x_train.npy')
-    train_labels = np.load(train_dir + '/y_train.npy')
-    # load testing data
-    test_images = np.load(test_dir + '/x_test.npy')
-    test_labels = np.load(test_dir + '/y_test.npy')
+    outputs, state = tf.nn.dynamic_rnn(lstm_cell, word_embeddings,
+                                   initial_state=initial_state,
+                                   dtype=tf.float32)
+    #print("The outputs over all timesteps: "+ str(outputs))
+    #print("The final state of the LSTM layer: " + str(state))
+    logits = tf.layers.dense(outputs, VOCAB_SIZE)
 
-    # split into train and validate
-    if validate:
-        train_images, valid_images, train_labels, valid_labels = util.split_data(train_images, train_labels, split)
-        valid_num_examples = valid_images.shape[0]
-    train_num_examples = train_images.shape[0]
-    test_num_examples = test_images.shape[0]
 
-    # define classification loss
-    y = tf.placeholder(tf.float32, [None, 100], name='label')
+    loss = tf.contrib.seq2seq.sequence_loss(
+        logits,
+        train_input.targets,
+        tf.ones([BATCH_SIZE, TIME_STEPS], dtype=tf.float32),
+        average_across_timesteps=True,
+        average_across_batch=True)
 
-    # calculate loss
-    sparsity_loss = tf.norm(code, ord=1, axis=1)
-    reconstruction_loss = tf.reduce_mean(tf.square(outputs - x)) # MSE
-    total_loss = reconstruction_loss + sparsity_weight * sparsity_loss
+    optimizer = tf.train.RMSPropOptimizer(LEARNING_RATE)
+    train_op = optimizer.minimize(loss)
 
-    # setup optimizer
-    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
-    train_op = optimizer.minimize(total_loss)
+    session = tf.Session()
+    session.run(tf.global_variables_initializer())
 
-    encoder_saver = tf.train.Saver()
-    decoder_saver = tf.train.Saver()
+    # start queue runners
+    coord = tf.train.Coordinator()
+    threads = tf.train.start_queue_runners(sess=session, coord=coord)
 
-    with tf.Session() as session:
-        
-        #initialize variables
-        session.run(tf.global_variables_initializer())
+    # retrieve some data to look at
+    examples = session.run([train_input.input_data, train_input.targets])
+    # we can run the train op as usual
+    _ = session.run(train_op)
 
-        best_valid_loss = float("inf")
-        count = 0
-        for epoch in range(FLAGS.epoch_num):
-            
-            #Train
-            for i in range(train_num_examples // batch_size):
-                batch_xs = train_images[i*batch_size:(i+1)*batch_size, :]
-                session.run(train_op, {x: batch_xs})
-            
-            #Validate
-            if validate:
-                valid_loss = []
-                for i in range(valid_num_examples // batch_size):
-                    batch_xs = valid_images[i*batch_size:(i+1)*batch_size, :]
-                    loss = session.run(total_loss, {x: batch_xs})
-                    valid_loss.append(loss)
-                avg_valid_loss = np.sum(valid_loss) / len(valid_loss)
-                
-                #Early Stopping
-                if avg_valid_loss < best_valid_loss:
-                    best_valid_loss = avg_valid_loss
-                    best_epoch = epoch
-                    count = 0
-                    encoder_saver.save(session, os.path.join(save_dir + "models/", "maxquality_encoder_homework_3-0"))
-                    decoder_saver.save(session, os.path.join(save_dir + "models/", "maxquality_decoder_homework_3-0"))
-                    encoder_saver.save(session, os.path.join(save_dir + "models/", "maxcompression_encoder_homework_3-0"))
-                    decoder_saver.save(session, os.path.join(save_dir + "models/", "maxcompression_decoder_homework_3-0"))
-                else:
-                    count += 1
+    #print("Example input data:\n" + str(examples[0][1]))
+    # print("Example target:\n" + str(examples[1][1]))
 
-                if count > early_stop:
-                    break
+    for epoch in range(EPOCHS):
+        _ = session.run(train_op)
 
-        #Run a test
-        psnr_list = []
-        for i in range(test_num_examples): 
-            x_out, code_out, output_out = session.run([x, code, outputs], {x: np.expand_dims(test_images[i], axis=0)})
-            psnr_list.append(util.psnr(test_images[i],output_out))
-        avg_psnr = np.sum(psnr_list) / len(psnr_list)
+    a = session.run([test_input.input_data])
+    coord = tf.train.Coordinator()
+    threads = tf.train.start_queue_runners(sess=session, coord=coord)
 
-        if not validate:
-            encoder_saver.save(session, os.path.join(save_dir + "models/", "maxquality_encoder_homework_3-0"))
-            decoder_saver.save(session, os.path.join(save_dir + "models/", "maxquality_decoder_homework_3-0"))
-            encoder_saver.save(session, os.path.join(save_dir + "models/", "maxcompression_encoder_homework_3-0"))
-            decoder_saver.save(session, os.path.join(save_dir + "models/", "maxcompression_decoder_homework_3-0"))
+    softmax_out = tf.nn.softmax(tf.reshape(logits, [-1, VOCAB_SIZE]))
+    predict = tf.cast(tf.argmax(softmax_out, axis=1), tf.int32)
+
+    a = session.run([test_input.input_data[0]])
+    b = session.run([predict])
+
+    session.run([test_input.targets[0]])
+    pred = session.run(predict)
+    pred
+    session.run(test_input.targets[0])
+    correct_prediction = tf.equal(pred, tf.reshape(test_input.targets, [-1]))
+    session.run(correct_prediction[0])
+    session.run(correct_prediction)
+
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    accuracy_val = session.run(accuracy)
 
     allfile = open('output/all_models_out.csv', 'a+')
-    allfile.write(ae_name + ',' +str(code_size) + ',' + str(sparsity_weight) + ',' + str(batch_size) + ',' + str(epoch) + ',' + str(avg_psnr) +"\n")
+    allfile.write(str(LSTM_SIZE) + ',' + str(VOCAB_SIZE) + ',' + str(EMBEDDING_SIZE) + ',' + str(EPOCHS) + ',' + str(BATCH_SIZE) + ',' + str(TIME_STEPS) + ',' + str(LEARNING_RATE) + ',' + str(accuracy_val) +"\n")
     allfile.close()
+
+
+
+class PTBInput(object):
+        """The input data.
+        
+        Code sourced from https://github.com/tensorflow/models/blob/master/tutorials/rnn/ptb/ptb_word_lm.py
+        """
+
+        def __init__(self, data, batch_size, num_steps, name=None):
+            self.batch_size = batch_size
+            self.num_steps = num_steps
+            self.epoch_size = ((len(data) // batch_size) - 1) // num_steps
+            self.input_data, self.targets = ptb_reader.ptb_producer(
+                data, batch_size, num_steps, name=name)
 
 if __name__ == "__main__":
     tf.app.run()
