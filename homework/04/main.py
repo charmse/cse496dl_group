@@ -78,45 +78,44 @@ def main(argv):
 
     optimizer = tf.train.RMSPropOptimizer(LEARNING_RATE)
     train_op = optimizer.minimize(loss)
+    softmax_out = tf.nn.softmax(tf.reshape(logits, [-1, VOCAB_SIZE]))
+    predict = tf.cast(tf.argmax(softmax_out, axis=1), tf.int32)
 
-    session = tf.Session()
-    session.run(tf.global_variables_initializer())
+    with tf.Session() as session:
+        session.run(tf.global_variables_initializer())
 
     # start queue runners
-    coord = tf.train.Coordinator()
-    threads = tf.train.start_queue_runners(sess=session, coord=coord)
+        coord = tf.train.Coordinator()
+        threads = tf.train.start_queue_runners(sess=session, coord=coord)
 
     # retrieve some data to look at
-    examples = session.run([train_input.input_data, train_input.targets])
+        examples = session.run([train_input.input_data, train_input.targets])
     # we can run the train op as usual
-    _ = session.run(train_op)
+    #_ = session.run(train_op)
 
     #print("Example input data:\n" + str(examples[0][1]))
     # print("Example target:\n" + str(examples[1][1]))
 
-    for epoch in range(EPOCHS):
-        _ = session.run(train_op)
+        for epoch in range(EPOCHS):
+            _ = session.run(train_op)
 
-    a = session.run([test_input.input_data])
-    coord = tf.train.Coordinator()
-    threads = tf.train.start_queue_runners(sess=session, coord=coord)
+        #a = session.run([test_input.input_data])
+        #coord = tf.train.Coordinator()
+        #threads = tf.train.start_queue_runners(sess=session, coord=coord)
 
-    softmax_out = tf.nn.softmax(tf.reshape(logits, [-1, VOCAB_SIZE]))
-    predict = tf.cast(tf.argmax(softmax_out, axis=1), tf.int32)
+        a = session.run([test_input.input_data[0]])
+        b = session.run([predict])
 
-    a = session.run([test_input.input_data[0]])
-    b = session.run([predict])
+        #session.run([test_input.targets[0]])
+        #pred = session.run(predict)
+        #pred
+        #session.run(test_input.targets[0])
+        correct_prediction = tf.equal(pred, tf.reshape(test_input.targets, [-1]))
+        session.run(correct_prediction[0])
+        session.run(correct_prediction)
 
-    session.run([test_input.targets[0]])
-    pred = session.run(predict)
-    pred
-    session.run(test_input.targets[0])
-    correct_prediction = tf.equal(pred, tf.reshape(test_input.targets, [-1]))
-    session.run(correct_prediction[0])
-    session.run(correct_prediction)
-
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    accuracy_val = session.run(accuracy)
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+        accuracy_val = session.run(accuracy)
 
     allfile = open('output/all_models_out.csv', 'a+')
     allfile.write(str(LSTM_SIZE) + ',' + str(VOCAB_SIZE) + ',' + str(EMBEDDING_SIZE) + ',' + str(EPOCHS) + ',' + str(BATCH_SIZE) + ',' + str(TIME_STEPS) + ',' + str(LEARNING_RATE) + ',' + str(accuracy_val) +"\n")
