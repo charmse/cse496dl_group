@@ -23,6 +23,7 @@ flags.DEFINE_integer('time_steps', 25, '')
 flags.DEFINE_integer('vocab_size', 10000, '')
 flags.DEFINE_integer('embedding_size', 100, '')
 flags.DEFINE_integer('lstm_size', 200, '')
+flags.DEFINE_integer('k', 1, '')
 FLAGS = flags.FLAGS
 
 def main(argv):
@@ -31,15 +32,12 @@ def main(argv):
     EPOCHS = FLAGS.epochs
     DATA_DIR = FLAGS.data_dir
     LEARNING_RATE = FLAGS.lr
-    early_stop = FLAGS.early_stop
     BATCH_SIZE = FLAGS.batch_size
-    reg_coeff = FLAGS.reg_coeff
     TIME_STEPS = FLAGS.time_steps
     VOCAB_SIZE = FLAGS.vocab_size
     EMBEDDING_SIZE = FLAGS.embedding_size
     LSTM_SIZE = FLAGS.lstm_size
-    train_dir = FLAGS.train_dir
-    test_dir = FLAGS.test_dir
+    K = FLAGS.k
 
     sys.path.append("/work/cse496dl/shared/hackathon/08")
 
@@ -84,20 +82,21 @@ def main(argv):
     with tf.Session() as session:
         session.run(tf.global_variables_initializer())
 
-    # start queue runners
+        # start queue runners
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(sess=session, coord=coord)
 
-    # retrieve some data to look at
+        # retrieve some data to look at
         examples = session.run([train_input.input_data, train_input.targets])
-    # we can run the train op as usual
-    #_ = session.run(train_op)
+        # we can run the train op as usual
+        #_ = session.run(train_op)
 
-    #print("Example input data:\n" + str(examples[0][1]))
-    # print("Example target:\n" + str(examples[1][1]))
+        #print("Example input data:\n" + str(examples[0][1]))
+        # print("Example target:\n" + str(examples[1][1]))
 
         for epoch in range(EPOCHS):
-            _ = session.run(train_op)
+            for i in range(train_input.input_data.shape[0] // BATCH_SIZE):
+                _ = session.run(train_op)
 
         #a = session.run([test_input.input_data])
         #coord = tf.train.Coordinator()
@@ -110,7 +109,7 @@ def main(argv):
         #pred = session.run(predict)
         #pred
         #session.run(test_input.targets[0])
-        correct_prediction = tf.equal(pred, tf.reshape(test_input.targets, [-1]))
+        correct_prediction = tf.equal(predict, tf.reshape(test_input.targets, [-1]))
         session.run(correct_prediction[0])
         session.run(correct_prediction)
 
