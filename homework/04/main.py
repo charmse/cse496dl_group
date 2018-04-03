@@ -46,7 +46,7 @@ def main(argv):
     sys.path.append("/work/cse496dl/shared/hackathon/08")
 
     train_data, valid_data, test_data, VOCAB_SIZE, reversed_dictionary = util.ptb_raw_data(DATA_DIR)
-    training_input = util.Input(batch_size=20, num_steps=20, data=train_data)
+    training_input = util.Input(batch_size=BATCH_SIZE, num_steps=NUM_STEPS, data=train_data)
     m = model.Model(training_input, is_training=True, hidden_size=LSTM_SIZE, vocab_size=VOCAB_SIZE,
             num_layers=LSTM_LAYERS)
     output = m.output
@@ -60,7 +60,7 @@ def main(argv):
             average_across_timesteps=False,
             average_across_batch=True)
 
-        # Update the cost
+    # Update the cost
     cost = tf.reduce_sum(loss)
 
         # get the prediction accuracy
@@ -70,7 +70,7 @@ def main(argv):
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 
-        #self.learning_rate = tf.Variable(0.0, trainable=False)
+    #self.learning_rate = tf.Variable(0.0, trainable=False)
     optimizer = tf.train.RMSPropOptimizer(LEARNING_RATE)
     train_op = optimizer.minimize(loss)
 
@@ -108,6 +108,60 @@ def main(argv):
         coord.request_stop()
         coord.join(threads)
 
+    tf.reset_default_graph()
+    test_input = util.Input(batch_size=BATCH_SIZE, num_steps=NUM_STEPS, data=test_data)
+    m_test = model.Model(test_input, is_training=False, hidden_size=LSTM_SIZE, vocab_size=VOCAB_SIZE,
+                num_layers=LSTM_LAYERS)
+    saver = tf.train.Saver()
+    output = m_test.output
+    logits = m_test.logits
+    init_state = m_test.init_state
+    state = m_test.state
+    loss = tf.contrib.seq2seq.sequence_loss(
+                logits,
+                test_input.targets,
+                tf.ones([BATCH_SIZE, NUM_STEPS], dtype=tf.float32),
+                average_across_timesteps=False,
+                average_across_batch=True)
+
+            # Update the cost
+    cost = tf.reduce_sum(loss)
+
+            # get the prediction accuracy
+    softmax_out = tf.nn.softmax(tf.reshape(logits, [-1, VOCAB_SIZE]))
+    predict = tf.cast(tf.argmax(softmax_out, axis=1), tf.int32)
+    correct_prediction = tf.equal(predict, tf.reshape(test_input.targets, [-1]))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    with tf.Session() as sess:
+            # start threads
+            coord = tf.train.Coordinator()
+            threads = tf.train.start_queue_runners(coord=coord)
+            current_state = np.zeros((LSTM_LAYERS, 2, m_test.batch_size, m_test.hidden_size))
+            # restore the trained model
+            saver.restore(sess, "models/homework_4-0")
+            # get an average accuracy over num_acc_batches
+            num_acc_batches = 30
+            check_batch_idx = 25
+            acc_check_thresh = 5
+            accuracy_final = 0
+            for batch in range(num_acc_batches):
+                    current_state = np.zeros((1, 2, m_test.batch_size, m_test.hidden_size))
+                    data_input,true_vals, pred, current_state, acc = sess.run([m_test.input_obj.input_data,m_test.input_obj.targets, predict, m_test.state, accuracy],
+                                                                feed_dict={m_test.init_state: current_state})
+                    pred_string = [reversed_dictionary[x] for x in pred[:m_test.num_steps]]
+                    true_vals_string = [reversed_dictionary[x] for x in true_vals[0]]
+                    data_input_string = [reversed_dictionary[x] for x in data_input[0]]
+
+                    if batch >= acc_check_thresh:
+                        accuracy_final += acc
+
+            allfile = open('output/all_models_out.csv', 'a+')
+            allfile.write(str(LSTM_SIZE) + ',' + str(k) + ',' + str(VOCAB_SIZE) + ',' + str(EMBEDDING_SIZE) + ',' + str(EPOCHS) + ',' + str(BATCH_SIZE) + ',' + str(TIME_STEPS) + ',' + str(LEARNING_RATE) + ',' + str(accuracy_final / (num_acc_batches-acc_check_thresh)) +"\n")
+            allfile.close()
+
+            # close threads
+            coord.request_stop()
+            coord.join(threads)
 
     # raw_data = ptb_reader.ptb_raw_data(DATA_DIR)
     # train_data, valid_data, test_data, _ = raw_data
