@@ -37,22 +37,18 @@ def main(argv):
     VOCAB_SIZE = FLAGS.vocab_size
     EMBEDDING_SIZE = FLAGS.embedding_size
     LSTM_SIZE = FLAGS.lstm_size
-    K = FLAGS.k
+    k = FLAGS.k
 
     sys.path.append("/work/cse496dl/shared/hackathon/08")
 
     raw_data = ptb_reader.ptb_raw_data(DATA_DIR)
     train_data, valid_data, test_data, _ = raw_data
     train_input = PTBInput(train_data, BATCH_SIZE, TIME_STEPS, name="TrainInput")
-    #print("The time distributed training data: " + str(train_input.input_data))
-    #print("The similarly distributed targets: " + str(train_input.targets))
-
     test_input = PTBInput(test_data,BATCH_SIZE,TIME_STEPS,name="TestInput")
 
     # setup input and embedding
     embedding_matrix = tf.get_variable('embedding_matrix', dtype=tf.float32, shape=[VOCAB_SIZE, EMBEDDING_SIZE], trainable=True)
     word_embeddings = tf.nn.embedding_lookup(embedding_matrix, train_input.input_data)
-    #print("The output of the word embedding: " + str(word_embeddings))
 
     lstm_cell = tf.contrib.rnn.BasicLSTMCell(LSTM_SIZE)
 
@@ -62,10 +58,8 @@ def main(argv):
     outputs, state = tf.nn.dynamic_rnn(lstm_cell, word_embeddings,
                                    initial_state=initial_state,
                                    dtype=tf.float32)
-    #print("The outputs over all timesteps: "+ str(outputs))
-    #print("The final state of the LSTM layer: " + str(state))
-    logits = tf.layers.dense(outputs, VOCAB_SIZE)
 
+    logits = tf.layers.dense(outputs, VOCAB_SIZE)
 
     loss = tf.contrib.seq2seq.sequence_loss(
         logits,
@@ -88,27 +82,15 @@ def main(argv):
 
         # retrieve some data to look at
         examples = session.run([train_input.input_data, train_input.targets])
-        # we can run the train op as usual
-        #_ = session.run(train_op)
 
-        #print("Example input data:\n" + str(examples[0][1]))
-        #print("Example target:\n" + str(examples[1][1]))
-
+        #train
         for epoch in range(EPOCHS):
             for i in range(train_input.input_data.shape[0] // BATCH_SIZE):
                 _ = session.run(train_op)
 
-        #a = session.run([test_input.input_data])
-        #coord = tf.train.Coordinator()
-        #threads = tf.train.start_queue_runners(sess=session, coord=coord)
-
         a = session.run([test_input.input_data[0]])
         b = session.run([predict])
 
-        #session.run([test_input.targets[0]])
-        #pred = session.run(predict)
-        #pred
-        #session.run(test_input.targets[0])
         correct_prediction = tf.equal(predict, tf.reshape(test_input.targets, [-1]))
         session.run(correct_prediction[0])
         session.run(correct_prediction)

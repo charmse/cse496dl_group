@@ -1,0 +1,5 @@
+LSTM Size,Vocab Size,Embedding Size,Epochs,Batch Size,Time Steps,Learning Rate,Accuracy 
+200,10000,100,1,20,25,0.0001,0.0
+200,10000,100,1,20,25,0.0001,0.0
+200,10000,100,1,20,25,0.0001,0.0
+200,10000,100,1,20,25,0.0001,0.002
