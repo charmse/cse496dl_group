@@ -92,7 +92,7 @@ def main(argv):
         #_ = session.run(train_op)
 
         #print("Example input data:\n" + str(examples[0][1]))
-        # print("Example target:\n" + str(examples[1][1]))
+        #print("Example target:\n" + str(examples[1][1]))
 
         for epoch in range(EPOCHS):
             for i in range(train_input.input_data.shape[0] // BATCH_SIZE):
