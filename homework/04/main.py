@@ -25,6 +25,7 @@ flags.DEFINE_integer('embedding_size', 100, '')
 flags.DEFINE_integer('lstm_size', 200, '')
 flags.DEFINE_integer('lstm_layers', 1, '')
 flags.DEFINE_integer('k', 1, '')
+flags.DEFINE_boolean('train', True, '')
 FLAGS = flags.FLAGS
 
 def main(argv):
@@ -40,13 +41,14 @@ def main(argv):
     LSTM_SIZE = FLAGS.lstm_size
     LSTM_LAYERS = FLAGS.lstm_layers
     k = FLAGS.k
+    TRAIN = FLAGS.train
 
     sys.path.append("/work/cse496dl/shared/hackathon/08")
 
     train_data, valid_data, test_data, VOCAB_SIZE, reversed_dictionary = util.ptb_raw_data(DATA_DIR)
     training_input = util.Input(batch_size=20, num_steps=20, data=train_data)
     m = model.Model(training_input, is_training=True, hidden_size=LSTM_SIZE, vocab_size=VOCAB_SIZE,
-              num_layers=LSTM_LAYERS)
+            num_layers=LSTM_LAYERS)
     output = m.output
     logits = m.logits
     init_state = m.init_state
@@ -89,12 +91,12 @@ def main(argv):
                 # cost, _ = sess.run([m.cost, m.optimizer])
                 if step % print_iter != 0:
                     cost1, _, current_state = sess.run([cost, train_op, state],
-                                                      feed_dict={init_state: current_state})
+                                                    feed_dict={init_state: current_state})
                 else:
                     #seconds = (float((dt.datetime.now() - curr_time).seconds) / print_iter)
                     #curr_time = dt.datetime.now()
                     cost1, _, current_state, acc = sess.run([cost, train_op, state, accuracy],
-                                                           feed_dict={init_state: current_state})
+                                                        feed_dict={init_state: current_state})
                     print("Epoch {}, Step {}, cost: {:.3f}, accuracy: {:.3f}".format(epoch,
                             step, cost1, acc))
 
@@ -105,6 +107,7 @@ def main(argv):
         # close threads
         coord.request_stop()
         coord.join(threads)
+
 
     # raw_data = ptb_reader.ptb_raw_data(DATA_DIR)
     # train_data, valid_data, test_data, _ = raw_data
