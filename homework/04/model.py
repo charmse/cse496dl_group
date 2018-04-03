@@ -3,49 +3,42 @@ import tensorflow as tf
 import numpy as np
 import util
 import sys
+import os
 
-def upscale_block(x, filter=3, kernel=3, scale=2):
-    """ conv2d_transpose """
-    return tf.layers.conv2d_transpose(x, filter, kernel, strides=(scale, scale), padding='same', activation=tf.nn.elu, kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=1.0))
+class Model(object):
+    def __init__(self, input, is_training, hidden_size, vocab_size, num_layers,
+                 dropout=0.5):
+        self.is_training = is_training
+        self.input_obj = input
+        self.batch_size = input.batch_size
+        self.num_steps = input.num_steps
+        self.hidden_size = hidden_size
 
-def downscale_block(x, filter=3, kernel=3, scale=2):
-    return tf.layers.conv2d(x, filter, kernel, strides=scale, padding='same',activation = tf.nn.elu,kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=1.0))
+        # create the word embeddings
+        embedding = tf.get_variable('embedding_matrix', dtype=tf.float32, shape=[vocab_size, self.hidden_size], trainable=True)
+            #embedding = tf.Variable(tf.random_uniform([vocab_size, self.hidden_size]))
+        inputs = tf.nn.embedding_lookup(embedding, self.input_obj.input_data)
 
-def autoencoder_network(x, code_size, model):
-    if(model == '1&2'):
-        encoder_16 = downscale_block(x)
-        encoder_8 = downscale_block(encoder_16)
-        flatten_dim = np.prod(encoder_8.get_shape().as_list()[1:])
-        flat = tf.reshape(encoder_8, [-1, flatten_dim])
-        code_en = tf.layers.dense(flat, 192, activation=tf.nn.elu, kernel_regularizer= tf.contrib.layers.l2_regularizer(scale=1.0))
-        code = tf.layers.dense(code_en, code_size, activation=tf.nn.elu, name='encoder_output', kernel_regularizer= tf.contrib.layers.l2_regularizer(scale=1.0))
-        decoder_input = tf.identity(code, name='decoder_input')
-        hidden_decoder = tf.layers.dense(decoder_input, 192, activation=tf.nn.elu, kernel_regularizer= tf.contrib.layers.l2_regularizer(scale=1.0))
-        decoder_8 = tf.reshape(hidden_decoder, [-1, 8, 8, 3])
-        decoder_16 = upscale_block(decoder_8)
-        outputs = upscale_block(decoder_16)
-        tf.identity(outputs, name='decoder_output')
-    elif(model == '3'):
-        encoder_16 = downscale_block(x)
-        flatten_dim = np.prod(encoder_16.get_shape().as_list()[1:])
-        flat = tf.reshape(encoder_16, [-1, flatten_dim])
-        code = tf.layers.dense(flat, 768, activation=tf.nn.elu, name='encoder_output', kernel_regularizer= tf.contrib.layers.l2_regularizer(scale=1.0))
-        decoder_input = tf.identity(code, name='decoder_input')
-        decoder_16 = tf.reshape(decoder_input, [-1, 16, 16, 3])
-        outputs = upscale_block(decoder_16)
-        tf.identity(outputs, name='decoder_output')
-    elif(model == '4'):
-        encoder_16 = downscale_block(x)
-        flatten_dim = np.prod(encoder_16.get_shape().as_list()[1:])
-        flat = tf.reshape(encoder_16, [-1, flatten_dim])
-        code_en = tf.layers.dense(flat, 768, activation=tf.nn.elu, kernel_regularizer= tf.contrib.layers.l2_regularizer(scale=1.0))
-        code = tf.layers.dense(code_en, code_size, activation=tf.nn.elu, name='encoder_output', kernel_regularizer= tf.contrib.layers.l2_regularizer(scale=1.0))
-        decoder_input = tf.identity(code, name='decoder_input')
-        hidden_decoder = tf.layers.dense(decoder_input, 768, activation=tf.nn.elu)
-        decoder_16 = tf.reshape(hidden_decoder, [-1, 16, 16, 3])
-        outputs = upscale_block(decoder_16)
-        tf.identity(outputs, name='decoder_output')
-    else:
-        print("Error: Auto Encoder Model Not Found!")
-        sys.exit(1)
-    return code, outputs, model
+        if is_training and dropout < 1:
+            inputs = tf.nn.dropout(inputs, dropout)
+
+        # set up the state storage / extraction
+        self.init_state = tf.placeholder(tf.float32, [num_layers, 2, self.batch_size, self.hidden_size])
+
+        state_per_layer_list = tf.unstack(self.init_state, axis=0)
+        rnn_tuple_state = tuple(
+            [tf.contrib.rnn.LSTMStateTuple(state_per_layer_list[idx][0], state_per_layer_list[idx][1])
+             for idx in range(num_layers)]
+        )
+
+        # create an LSTM cell to be unrolled
+        cell = tf.contrib.rnn.LSTMCell(hidden_size, forget_bias=1.0)
+        # add a dropout wrapper if training
+        if is_training and dropout < 1:
+            cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=dropout)
+        if num_layers >= 1:
+            cell = tf.contrib.rnn.MultiRNNCell([cell for _ in range(num_layers)], state_is_tuple=True)
+
+        self.output, self.state = tf.nn.dynamic_rnn(cell, inputs, dtype=tf.float32, initial_state=rnn_tuple_state)
+        # reshape to (batch_size * num_steps, hidden_size)
+        self.logits = tf.layers.dense(self.output, vocab_size)

@@ -11,6 +11,7 @@ def _read_words(filename):
       return f.read().replace("\n", "<eos>").split()
     else:
       return f.read().decode("utf-8").replace("\n", "<eos>").split()
+
 def _build_vocab(filename):
   data = _read_words(filename)
 
@@ -21,9 +22,11 @@ def _build_vocab(filename):
   word_to_id = dict(zip(words, range(len(words))))
 
   return word_to_id
+
 def _file_to_word_ids(filename, word_to_id):
   data = _read_words(filename)
   return [word_to_id[word] for word in data if word in word_to_id]
+
 def ptb_raw_data(data_path=None):
   """Load PTB raw data from data directory "data_path".
   Reads PTB text files, converts strings to integer ids,
@@ -49,6 +52,7 @@ def ptb_raw_data(data_path=None):
   vocabulary = len(word_to_id)
   reversed_dictionary = dict(zip(word_to_id.values(), word_to_id.keys()))
   return train_data, valid_data, test_data, vocabulary, reversed_dictionary
+
 def batch_producer(raw_data, batch_size, num_steps):
     raw_data = tf.convert_to_tensor(raw_data, name="raw_data", dtype=tf.int32)
 
@@ -65,6 +69,7 @@ def batch_producer(raw_data, batch_size, num_steps):
     y = data[:, i * num_steps + 1: (i + 1) * num_steps + 1]
     y.set_shape([batch_size, num_steps])
     return x, y
+
 class Input(object):
     def __init__(self, batch_size, num_steps, data):
         self.batch_size = batch_size
