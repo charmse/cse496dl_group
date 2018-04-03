@@ -26,7 +26,7 @@ do
         #iterate over every k
 		for k in "${KS[@]}"
         do
-            # execute a single run
+            # execute a single run comment
 		    singularity exec docker://unlhcc/sonnet-gpu python3 -u $1 --lstm_size $ls --lr $lr --k $k --epochs 100
         done
 	done
