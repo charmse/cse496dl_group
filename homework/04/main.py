@@ -156,7 +156,7 @@ def main(argv):
                         accuracy_final += acc
 
             allfile = open('output/all_models_out.csv', 'a+')
-            allfile.write(str(LSTM_SIZE) + ',' + str(k) + ',' + str(VOCAB_SIZE) + ',' + str(EMBEDDING_SIZE) + ',' + str(EPOCHS) + ',' + str(BATCH_SIZE) + ',' + str(TIME_STEPS) + ',' + str(LEARNING_RATE) + ',' + str(accuracy_final / (num_acc_batches-acc_check_thresh)) +"\n")
+            allfile.write(str(LSTM_SIZE) + ',' + str(k) + ',' + str(VOCAB_SIZE) + ',' + str(EMBEDDING_SIZE) + ',' + str(EPOCHS) + ',' + str(BATCH_SIZE) + ',' + str(NUM_STEPS) + ',' + str(LEARNING_RATE) + ',' + str(accuracy_final / (num_acc_batches-acc_check_thresh)) +"\n")
             allfile.close()
 
             # close threads
