@@ -101,9 +101,9 @@ def main(argv):
                             step, cost1, acc))
 
             # save a model checkpoint
-            saver.save(sess, os.path.join("models/", "homework_4-0"))
+            saver.save(sess, os.path.join("models/", "homework_4-0_2"))
         # do a final save
-        saver.save(sess, os.path.join("models/", "homework_4-0"))
+        saver.save(sess, os.path.join("models/", "homework_4-0_2"))
         # close threads
         coord.request_stop()
         coord.join(threads)
@@ -138,7 +138,7 @@ def main(argv):
             threads = tf.train.start_queue_runners(coord=coord)
             current_state = np.zeros((LSTM_LAYERS, 2, m_test.batch_size, m_test.hidden_size))
             # restore the trained model
-            saver.restore(sess, "models/homework_4-0")
+            saver.restore(sess, "models/homework_4-0_2")
             # get an average accuracy over num_acc_batches
             check_batch_idx = 25
             acc_check_thresh = 5
