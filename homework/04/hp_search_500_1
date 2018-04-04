@@ -8,6 +8,7 @@
 #SBATCH --error=/work/soh/charms/cse496dl/cse496dl_group/homework/04/job.err
 #SBATCH --output=/work/soh/charms/cse496dl/cse496dl_group/homework/04/job.out
 #SBATCH --qos=short		 # 6 hour job run time max
+#SBATCH --reservation=cse496dl
 
 module load singularity
 
