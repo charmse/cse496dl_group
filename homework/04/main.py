@@ -16,7 +16,7 @@ flags.DEFINE_integer('batch_size', 20, '')
 flags.DEFINE_float('lr', 1e-4, '')
 flags.DEFINE_integer('early_stop', 12, '')
 flags.DEFINE_string('db', 'cifar-100', '')
-flags.DEFINE_integer('epochs', 1, '')
+flags.DEFINE_integer('epochs', 10, '')
 flags.DEFINE_float('reg_coeff', 0.001, '')
 flags.DEFINE_float('split', 0.90, '')
 flags.DEFINE_integer('num_steps', 20, '')
@@ -156,7 +156,7 @@ def main(argv):
                         accuracy_final += acc
 
             allfile = open('output/all_models_out.csv', 'a+')
-            allfile.write(str(LSTM_SIZE) + ',' + str(k) + ',' + str(VOCAB_SIZE) + ',' + str(EMBEDDING_SIZE) + ',' + str(EPOCHS) + ',' + str(BATCH_SIZE) + ',' + str(NUM_STEPS) + ',' + str(LEARNING_RATE) + ',' + str(accuracy_final / (num_acc_batches-acc_check_thresh)) +"\n")
+            allfile.write(str(LSTM_SIZE) + ',' + str(k_val) + ',' + str(VOCAB_SIZE) + ',' + str(EMBEDDING_SIZE) + ',' + str(EPOCHS) + ',' + str(BATCH_SIZE) + ',' + str(NUM_STEPS) + ',' + str(LEARNING_RATE) + ',' + str(accuracy_final / (num_acc_batches-acc_check_thresh)) +"\n")
             allfile.close()
 
             # close threads
