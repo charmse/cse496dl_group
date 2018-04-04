@@ -42,5 +42,3 @@ class Model(object):
         self.output, self.state = tf.nn.dynamic_rnn(cell, inputs, dtype=tf.float32, initial_state=rnn_tuple_state)
         # reshape to (batch_size * num_steps, hidden_size)
         self.logits = tf.layers.dense(self.output, vocab_size)
-
-        # Use the contrib sequence loss and average over the batches

@@ -1,0 +1,34 @@
+#!/bin/sh
+#SBATCH --time=06:00:00          # Run time in hh:mm:ss
+#SBATCH --mem=32000              # Maximum memory required (in megabytes)
+#SBATCH --job-name=hps_100_5
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu
+#SBATCH --constraint=[gpu_k20|gpu_k40|gpu_p100]
+#SBATCH --error=/work/soh/charms/cse496dl/cse496dl_group/homework/04/job.err
+#SBATCH --output=/work/soh/charms/cse496dl/cse496dl_group/homework/04/job.out
+#SBATCH --qos=short		 # 6 hour job run time max
+
+module load singularity
+
+declare -a LSTM_SIZES=(100)
+
+declare -a LEARNING_RATES=(0.001 0.0005 0.0001)
+
+declare -a KS=(5)
+
+# iterate over every lstm_size
+for ls in "${LSTM_SIZES[@]}"
+do
+	# iterate over every learning rate
+	for lr in "${LEARNING_RATES[@]}"
+	do
+        #iterate over every k
+		for k in "${KS[@]}"
+        do
+            # execute a single run
+		    singularity exec docker://unlhcc/sonnet-gpu python3 -u $1 --lstm_size $ls --lr $lr --k $k --epochs 100
+        done
+	done
+done
+
