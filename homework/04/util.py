@@ -56,7 +56,7 @@ def ptb_raw_data(data_path=None):
   reversed_dictionary = dict(zip(word_to_id.values(), word_to_id.keys()))
   return train_data, valid_data, test_data, vocabulary, reversed_dictionary
 
-def batch_producer(raw_data, batch_size, num_steps):
+def batch_producer(raw_data, batch_size, num_steps, k):
     raw_data = tf.convert_to_tensor(raw_data, name="raw_data", dtype=tf.int32)
 
     data_len = tf.size(raw_data)
@@ -69,16 +69,16 @@ def batch_producer(raw_data, batch_size, num_steps):
     i = tf.train.range_input_producer(epoch_size, shuffle=False).dequeue()
     x = data[:, i * num_steps:(i + 1) * num_steps]
     x.set_shape([batch_size, num_steps])
-    y = data[:, i * num_steps + 1: (i + 1) * num_steps + 1]
+    y = data[:, i * num_steps + k: (i + 1) * num_steps + k]
     y.set_shape([batch_size, num_steps])
     return x, y
 
 class Input(object):
-    def __init__(self, batch_size, num_steps, data):
+    def __init__(self, batch_size, num_steps, data, k):
         self.batch_size = batch_size
         self.num_steps = num_steps
         self.epoch_size = ((len(data) // batch_size) - 1) // num_steps
-        self.input_data, self.targets = batch_producer(data, batch_size, num_steps)
+        self.input_data, self.targets = batch_producer(data, batch_size, num_steps, k)
 
 def split_data(data, labels, proportion):
     """                                                                                                                                                                                                                                                                                                 
