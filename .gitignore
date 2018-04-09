@@ -17,3 +17,5 @@ homework/04/*.pyc
 homework/04/__pycache__
 homework/04/ptbdata/*
 homework/04/models/*
+project/*.pyc
+project/tiny-imagenet-200
