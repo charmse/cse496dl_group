@@ -1,13 +1,35 @@
+import os
+import model
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import itertools as itr
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from scipy.misc import imread
-import os
 from PIL import Image
 from random import randrange
-#matplotlib inline
+from collections import Counter
+
+#cleverhans
+from cleverhans.utils_mnist import data_mnist
+from cleverhans.utils_tf import model_train, model_eval
+from cleverhans.utils import AccuracyReport
+from cleverhans.utils_keras import cnn_model, KerasModelWrapper
+from cleverhans.utils_keras import KerasModelWrapper
+from cleverhans.attacks import FastGradientMethod, LBFGS, BasicIterativeMethod
+from cleverhans.utils import AccuracyReport
+
+#keras
+import keras
+from keras import __version__
+from keras import backend as K
+from keras.applications.inception_v3 import InceptionV3, preprocess_input
+from keras.models import Model, Sequential
+from keras.layers import Dense, GlobalAveragePooling2D, Dropout, Flatten, Conv2D, MaxPooling2D
+from keras.preprocessing.image import ImageDataGenerator
+from keras.optimizers import SGD
+from keras.datasets import mnist
 
 def split_data(data, labels, proportion):
     """                                                                                                                                                                                                                                                                                                 
@@ -97,15 +119,15 @@ def subsample(training_images,training_labels, ratio=0.8):
         sample_labels.append(training_labels[index])
     return np.asarray(sample),np.asarray(sample_labels)
 
-def load_images(input_dir):
-    filenames = []
-    idx = 0
-    #batch_size = batch_shape[0]
-    # Limit to first 20 images for this example
-    for filepath in sorted(tf.gfile.Glob(os.path.join(input_dir, '*.png'))):
-        filenames.append(os.path.basename(filepath))
-    x = np.array([np.array(Image.open(os.path.join(input_dir, fname))) for fname in filenames])
-    return x
+# def load_images(input_dir):
+#     filenames = []
+#     idx = 0
+#     #batch_size = batch_shape[0]
+#     # Limit to first 20 images for this example
+#     for filepath in sorted(tf.gfile.Glob(os.path.join(input_dir, '*.png'))):
+#         filenames.append(os.path.basename(filepath))
+#     x = np.array([np.array(Image.open(os.path.join(input_dir, fname))) for fname in filenames])
+#     return x
 
 def load_images(input_dir, batch_shape):
     images = np.zeros(batch_shape)

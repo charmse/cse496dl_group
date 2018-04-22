@@ -4,18 +4,34 @@ import model
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import itertools as itr
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from scipy.misc import imread
 from PIL import Image
 from random import randrange
-#%matplotlib inline
+from collections import Counter
 
 #cleverhans
-from cleverhans.attacks import FastGradientMethod
+from cleverhans.utils_mnist import data_mnist
+from cleverhans.utils_tf import model_train, model_eval
+from cleverhans.utils import AccuracyReport
+from cleverhans.utils_keras import cnn_model, KerasModelWrapper
+from cleverhans.utils_keras import KerasModelWrapper
+from cleverhans.attacks import FastGradientMethod, LBFGS, BasicIterativeMethod
+from cleverhans.utils import AccuracyReport
 
-#inception
-from tensorflow.contrib.slim.nets import inception
+#keras
+import keras
+from keras import __version__
+from keras import backend as K
+from keras.applications.inception_v3 import InceptionV3, preprocess_input
+from keras.models import Model, Sequential
+from keras.layers import Dense, GlobalAveragePooling2D, Dropout, Flatten, Conv2D, MaxPooling2D
+from keras.preprocessing.image import ImageDataGenerator
+from keras.optimizers import SGD
+from keras.datasets import mnist
+print("Finished Import")
 
 flags = tf.app.flags
 flags.DEFINE_string('data_dir', '', 'directory where MNIST is located')
@@ -35,11 +51,12 @@ flags.DEFINE_float('max_epsilon', 4.0, 'Maximum size of adversarial perturbation
 flags.DEFINE_integer('image_width', 299, 'Width of each input images.')
 flags.DEFINE_integer('image_height', 299, 'Height of each input images.')
 flags.DEFINE_float('eps', 2.0 * 16.0 / 255.0, '')
-flags.DEFINE_integer('num_classese', 1001, '')
+flags.DEFINE_integer('num_classes', 1001, '')
 FLAGS = flags.FLAGS
 
 def main(argv):
 
+    print("Start Main")
     # Set arguments:  Save_Dir Structure Learning_Rate Earling_Stoping Batch_Size Data_Dir    
     data_dir = FLAGS.data_dir
     save_dir = FLAGS.save_dir
@@ -60,8 +77,29 @@ def main(argv):
 
     tf.logging.set_verbosity(tf.logging.INFO)
 
-    image_labels = pd.read_csv("nips-2017-adversarial-learning-development-set/images.csv")
-    predictions = []
+    #load training data
+    imgs,labels,names = util.load_training_images('tiny-imagenet-200/train/')
+    print("Training Images Loaded")
+    
+    #retrype and resize training data
+    imgs = imgs[0:100]
+    labels = labels[0:100]
+    names = names[0:100]
+    imgs_large = np.ndarray(shape= [imgs.shape[0],299,299,3])
+    for i in range(imgs.shape[0]):
+        imgs_large[i,:,:,:] = util.rescale(imgs[i])
+    imgs_large=imgs_large.astype('uint8')
+    imgs_noisy = np.ndarray(shape= imgs_large.shape)
+    for i in range(imgs_large.shape[0]):
+        imgs_noisy[i,:,:,:] = util.noisy(1,imgs_large[i])
+    imgs_noisy=imgs_noisy.astype('uint8')
+    sub_imgs,sub_labels = util.subsample(imgs_noisy,labels)
+    batch_shape = [20, 299, 299, 3]
+    num_classes = 200
+
+    base_model = InceptionV3(weights='imagenet', include_top=False)
+    model = model.add_new_last_layer(base_model, 201)
+
 
 
 class InceptionModel(object):
