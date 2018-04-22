@@ -178,8 +178,10 @@ def main(argv):
     preds_ens_lbfgs = np.zeros((x_test.shape[0],10)) #variable to store the predictions of each model in the ensemble (10) for lbfgs adversarial examples
     max_vote_ens_lbfgs = np.zeros(x_test.shape[0]) #variable to store Majority vote from all models in ensemble for lbfgs adversarial examples
 
+    del model
+    
     for i in range(num_ens):
-        model = load_model(model.save("models/"+i+".h5"))
+        model = load_model("models/"+i+".h5")
         #get predictions of model i for fgsm adversarial examples
         ans = sess.run(tf.argmax(model.predict(adv_fgsm),axis=1))
         preds_ens_fgsm[:,i]= ans.reshape((adv_fgsm.shape[0],1))
