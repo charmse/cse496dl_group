@@ -188,3 +188,58 @@ def save_images(images, filenames, output_dir):
         with tf.gfile.Open(os.path.join(output_dir, filename), 'w') as f:
             img = (((images[i, :, :, :] + 1.0) * 0.5) * 255.0).astype(np.uint8)
             Image.fromarray(img).save(f, format='PNG')
+
+def add_gaussian_noise(X_train, mean, stddev):
+    ''' 
+    INPUT:  (1) 4D numpy array: all raw training image data, of shape 
+                (#imgs, #chan, #rows, #cols)
+            (2) float: the mean of the Gaussian to sample noise from
+            (3) float: the standard deviation of the Gaussian to sample
+                noise from. Note that the range of pixel values is
+                0-255; choose the standard deviation appropriately. 
+    OUTPUT: (1) 4D numpy array: noisy training data, of shape
+                (#imgs, #chan, #rows, #cols)
+    '''
+    n_imgs = X_train.shape[0]
+    n_chan = X_train.shape[3]
+    n_rows = X_train.shape[1]
+    n_cols = X_train.shape[2]
+    if stddev == 0:
+        noise = np.zeros((n_imgs, n_rows, n_cols,n_chan))
+    else:
+        noise = np.random.normal(mean, stddev/255., 
+                                 (n_imgs,n_rows, n_cols,n_chan))
+    noisy_X = X_train + noise
+    clipped_noisy_X = np.clip(noisy_X, 0., 1.)
+    return clipped_noisy_X
+
+def fgsm_attack(train_data,model,sess):
+    wrap = KerasModelWrapper(model)
+    fgsm = FastGradientMethod(wrap, sess=sess)
+    fgsm_params = {'eps': 0.3,
+                   'clip_min': 0.,
+                   'clip_max': 1.}
+    adv_x = fgsm.generate_np(train_data, **fgsm_params)
+    return adv_x
+
+def bim_attack(train_data,model,sess):
+    wrap = KerasModelWrapper(model)
+    bim = BasicIterativeMethod(wrap, sess=sess)
+    bim_params = {'eps_iter': 0.01,
+              'nb_iter': 10,
+              'clip_min': 0.,
+              'clip_max': 1.}
+    adv_x = bim.generate_np(train_data, **bim_params)
+    return adv_x
+
+def lbfgs_attack(train_data,model,sess,tar_class):
+    wrap = KerasModelWrapper(model)
+    lbfgs = LBFGS(wrap,sess=sess)
+    one_hot_target = np.zeros((train_data.shape[0], 10), dtype=np.float32)
+    one_hot_target[:, tar_class] = 1
+    adv_x = lbfgs.generate_np(train_data, max_iterations=10,
+                                        binary_search_steps=3,
+                                        initial_const=1,
+                                        clip_min=-5, clip_max=5,
+                                        batch_size=1, y_target=one_hot_target)
+    return adv_x

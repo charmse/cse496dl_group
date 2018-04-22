@@ -35,6 +35,23 @@ from keras.datasets import mnist
 def make(x,struct):
     return x
 
+def model_arch():
+    model = Sequential()
+    model.add(Conv2D(32, kernel_size=(3, 3),
+                     activation='relu',
+                     input_shape=input_shape))
+    model.add(Conv2D(64, (3, 3), activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+    model.add(Flatten())
+    model.add(Dense(128, activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(num_classes, activation='softmax'))
+    model.compile(loss=keras.losses.categorical_crossentropy,
+                  optimizer=keras.optimizers.Adadelta(),
+                  metrics=['accuracy'])
+    return model
+
 def add_new_last_layer(base_model, nb_classes):
   """Add last layer to the convnet
   Args:
@@ -62,3 +79,23 @@ def setup_to_finetune(model):
       layer.trainable = True
    model.compile(optimizer=SGD(lr=0.0001, momentum=0.9),   
                  loss='categorical_crossentropy')
+
+class InceptionModel(object):
+  """Model class for CleverHans library."""
+
+  def __init__(self, num_classes):
+    self.num_classes = num_classes
+    self.built = False
+
+  def __call__(self, x_input):
+    """Constructs model and return probabilities for given input."""
+    reuse = True if self.built else None
+    with slim.arg_scope(inception.inception_v3_arg_scope()):
+      _, end_points = inception.inception_v3(
+          x_input, num_classes=self.num_classes, is_training=False,
+          reuse=reuse)
+    self.built = True
+    output = end_points['Predictions']
+    # Strip off the extra reshape op at the output
+    probs = output.op.inputs[0]
+    return probs
