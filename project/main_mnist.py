@@ -121,7 +121,7 @@ def main(argv):
         model = model_arch() #Build a new model architecture for every model in the ensemble
         sub_imgs,sub_labels = util.subsample(x_noisy,y_train) #subsample from the entire data, bagging
         model.fit(sub_imgs, sub_labels, batch_size=batch_size,epochs=epochs,verbose=1) #train the model
-        model.save("models/"+i+".h5") #save the model
+        model.save("models/"+str(i)+".h5") #save the model
         ans = sess.run(tf.argmax(model.predict(x_test),axis=1))  #get the predictions of the model
         preds_ens[:,i]= ans.reshape((x_test.shape[0],1)) #store the predictions of this particular model(i) in ith column of pred_ens variable
         del model #erase the model
@@ -179,7 +179,7 @@ def main(argv):
     del model
 
     for i in range(num_ens):
-        model = load_model("models/"+i+".h5")
+        model = load_model("models/"+str(i)+".h5")
         #get predictions of model i for fgsm adversarial examples
         ans = sess.run(tf.argmax(model.predict(adv_fgsm),axis=1))
         preds_ens_fgsm[:,i]= ans.reshape((adv_fgsm.shape[0],1))
