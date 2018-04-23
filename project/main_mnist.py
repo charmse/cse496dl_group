@@ -182,13 +182,13 @@ def main(argv):
         model = load_model("models/"+str(i)+".h5")
         #get predictions of model i for fgsm adversarial examples
         ans = sess.run(tf.argmax(model.predict(adv_fgsm),axis=1))
-        preds_ens_fgsm[:,i]= ans.reshape((adv_fgsm.shape[0],1))
-        #get predictions of model i for bim adversarial examples
-        ans = sess.run(tf.argmax(model.predict(adv_bim),axis=1))
-        preds_ens_bim[:,i]= ans.reshape((adv_bim.shape[0],1))
+        preds_ens_fgsm[:,i]= ans.reshape((adv_fgsm.shape[0]))
+         #get predictions of model i for bim adversarial examples
+        ans = sess.run(tf.argmax(model.predict(adv_bim),axis=1)) 
+        preds_ens_bim[:,i]= ans.reshape((adv_bim.shape[0]))
         #get predictions of model i for lbfgs adversarial examples
-        ans = sess.run(tf.argmax(model.predict(adv_lbfgs),axis=1))
-        preds_ens_lbfgs[:,i]= ans.reshape((adv_lbfgs.shape[0],1))
+        ans = sess.run(tf.argmax(model.predict(adv_lbfgs),axis=1)) 
+        preds_ens_lbfgs[:,i]= ans.reshape((adv_lbfgs.shape[0]))
         del model
 
     #Now the variable pred_ens consists of the predictions of all fgsm adversarial test_data for each model in ensemble.
