@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH --time=6:00:00          # Run time in hh:mm:ss
+#SBATCH --time=72:00:00          # Run time in hh:mm:ss
 #SBATCH --mem=32000              # Maximum memory required (in megabytes)
 #SBATCH --job-name=deep-singularity
 #SBATCH --partition=gpu
@@ -7,7 +7,6 @@
 #SBATCH --constraint=[gpu_k20|gpu_k40|gpu_p100]
 #SBATCH --error=/work/soh/charms/cse496dl/cse496dl_group/project/py.err
 #SBATCH --output=/work/soh/charms/cse496dl/cse496dl_group/project/py.out
-#SBATCH --qos=short		 # 6 hour job run time max
 #SBATCH --reservation=cse496dl
 
 module load singularity

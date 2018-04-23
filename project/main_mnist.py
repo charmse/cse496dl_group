@@ -123,7 +123,7 @@ def main(argv):
         model.fit(sub_imgs, sub_labels, batch_size=batch_size,epochs=epochs,verbose=1) #train the model
         model.save("models/"+str(i)+".h5") #save the model
         ans = sess.run(tf.argmax(model.predict(x_test),axis=1))  #get the predictions of the model
-        preds_ens[:,i]= ans.reshape((x_test.shape[0],1)) #store the predictions of this particular model(i) in ith column of pred_ens variable
+        preds_ens[:,i]= ans.reshape((x_test.shape[0])) #store the predictions of this particular model(i) in ith column of pred_ens variable
         del model #erase the model
 
     #Now the variable pred_ens consists of the predictions of all test_data for each model in ensemble.
