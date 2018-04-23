@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import itertools as itr
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 from scipy.misc import imread
 from PIL import Image
 from random import randrange

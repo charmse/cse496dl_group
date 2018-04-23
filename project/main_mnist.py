@@ -5,8 +5,6 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import itertools as itr
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 from scipy.misc import imread
 from PIL import Image
 from random import randrange
@@ -179,7 +177,7 @@ def main(argv):
     max_vote_ens_lbfgs = np.zeros(x_test.shape[0]) #variable to store Majority vote from all models in ensemble for lbfgs adversarial examples
 
     del model
-    
+
     for i in range(num_ens):
         model = load_model("models/"+i+".h5")
         #get predictions of model i for fgsm adversarial examples
