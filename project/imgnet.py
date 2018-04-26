@@ -74,8 +74,31 @@ def main(argv):
     num_classes = FLAGS.num_classes
     eps = FLAGS.eps
     batch_shape = [batch_size, image_height, image_width, 3]
+    input_shape = [image_height, image_width, 3]
 
     tf.logging.set_verbosity(tf.logging.INFO)
+
+    def model_arch():
+        model = Sequential()
+        model.add(Conv2D(50, kernel_size=(5, 5), activation='relu', input_shape=input_shape))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Conv2D(100, (5, 5), activation='relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Conv2D(200, (3, 3), activation='relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Dropout(0.5))
+        model.add(Flatten())
+        model.add(Dense(400, activation='relu'))
+        model.add(Dropout(0.5))
+        model.add(Dense(200, activation='relu'))
+        model.add(Dropout(0.5))
+        model.add(Dense(num_classes, activation='softmax'))
+        model.compile(loss=keras.losses.categorical_crossentropy,
+                    optimizer=keras.optimizers.Adadelta(),
+                    metrics=['accuracy'])
+        return model
+
+    model = model_arch
 
     #load training data
     imgs,labels,names = util.load_training_images('tiny-imagenet-200/train/')
@@ -96,31 +119,6 @@ def main(argv):
     sub_imgs,sub_labels = util.subsample(imgs_noisy,labels)
     batch_shape = [20, 299, 299, 3]
     num_classes = 200
-
-    base_model = InceptionV3(weights='imagenet', include_top=False)
-    model = model.add_new_last_layer(base_model, 201)
-
-
-
-class InceptionModel(object):
-  """Model class for CleverHans library."""
-
-  def __init__(self, num_classes):
-    self.num_classes = num_classes
-    self.built = False
-
-  def __call__(self, x_input):
-    """Constructs model and return probabilities for given input."""
-    reuse = True if self.built else None
-    with slim.arg_scope(inception.inception_v3_arg_scope()):
-      _, end_points = inception.inception_v3(
-          x_input, num_classes=self.num_classes, is_training=False,
-          reuse=reuse)
-    self.built = True
-    output = end_points['Predictions']
-    # Strip off the extra reshape op at the output
-    probs = output.op.inputs[0]
-    return probs
 
 if __name__ == "__main__":
     tf.app.run()

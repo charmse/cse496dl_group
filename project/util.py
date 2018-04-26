@@ -51,48 +51,6 @@ def onehot(data):
     data_final[np.arange(data.shape[0]),data.astype(int)]=1
     return data_final
 
-def noisy(noise_typ,image):
-    #Gaussian
-   if noise_typ == 1:
-      row,col,ch= image.shape
-      mean = 0
-      var = 0.1
-      sigma = var**0.5
-      gauss = np.random.normal(mean,sigma,(row,col,ch))
-      gauss = gauss.reshape(row,col,ch)
-      noisy = image + gauss
-      return noisy.astype('uint8')
-    #Salt and Pepper
-   elif noise_typ == 2:
-      row,col,ch = image.shape
-      s_vs_p = 0.5
-      amount = 0.004
-      out = np.copy(image)
-      # Salt mode
-      num_salt = np.ceil(amount * image.size * s_vs_p)
-      coords = [np.random.randint(0, i - 1, int(num_salt))
-              for i in image.shape]
-      out[coords] = 1
-      # Pepper mode
-      num_pepper = np.ceil(amount* image.size * (1. - s_vs_p))
-      coords = [np.random.randint(0, i - 1, int(num_pepper))
-              for i in image.shape]
-      out[coords] = 0
-      return out
-    #Poisson
-   elif noise_typ == 3:
-      vals = len(np.unique(image))
-      vals = 2 ** np.ceil(np.log2(vals))
-      noisy = np.random.poisson(image * vals) / float(vals)
-      return noisy
-    #speckle
-   elif noise_typ ==4:
-      row,col,ch = image.shape
-      gauss = np.random.randn(row,col,ch)
-      gauss = gauss.reshape(row,col,ch)        
-      noisy = image + image * gauss
-      return noisy.astype('uint8')
-
 def psnr(imageA, imageB):
     # the 'Mean Squared Error' between the two images is the
     # sum of the squared difference between the two images;
@@ -117,16 +75,6 @@ def subsample(training_images,training_labels, ratio=0.8):
         sample_labels.append(training_labels[index])
     return np.asarray(sample),np.asarray(sample_labels)
 
-# def load_images(input_dir):
-#     filenames = []
-#     idx = 0
-#     #batch_size = batch_shape[0]
-#     # Limit to first 20 images for this example
-#     for filepath in sorted(tf.gfile.Glob(os.path.join(input_dir, '*.png'))):
-#         filenames.append(os.path.basename(filepath))
-#     x = np.array([np.array(Image.open(os.path.join(input_dir, fname))) for fname in filenames])
-#     return x
-
 def load_images(input_dir, batch_shape):
     images = np.zeros(batch_shape)
     filenames = []
@@ -146,40 +94,6 @@ def load_images(input_dir, batch_shape):
     if idx > 0:
         yield filenames, images
 
-def load_training_images(training_image_dir):
-
-    image_index = 0
-    
-    images = np.ndarray(shape=(500*200, 64,64,3))
-    names = []
-    labels = []                       
-    
-    # Loop through all the types directories
-    for type in os.listdir(training_image_dir):
-        if os.path.isdir(training_image_dir + type + '/images/'):
-            type_images = os.listdir(training_image_dir + type + '/images/')
-            # Loop through all the images of a type directory
-            #batch_index = 0;
-            #print ("Loading Class ", type)
-            for image in type_images:
-                image_file = os.path.join(training_image_dir, type + '/images/', image)
-
-                # reading the images as they are; no normalization, no color editing
-                image_data = mpimg.imread(image_file) 
-                #print ('Loaded Image', image_file, image_data.shape)
-                if (image_data.shape == (64, 64, 3)):
-                    images[image_index, :,:,:] = image_data
-                    
-                    labels.append(type)
-                    names.append(image)
-                    
-                    image_index += 1
-                    #batch_index += 1
-                #if (batch_index >= batch_size):
-                 #   break;
-    labels = np.asarray(labels)
-    names = np.asarray(names)
-    return (images[0:len(labels)].astype('uint8'), labels, names)
 
 def save_images(images, filenames, output_dir):
     for i, filename in enumerate(filenames):
@@ -241,3 +155,197 @@ def lbfgs_attack(train_data,model,sess,tar_class):
                                         clip_min=-5, clip_max=5,
                                         batch_size=1, y_target=one_hot_target)
     return adv_x
+
+def noisy(noise_typ,image):
+    #Gaussian
+   if noise_typ == 1:
+      row,col,ch= image.shape
+      mean = 0
+      var = 0.1
+      sigma = var**0.5
+      gauss = np.random.normal(mean,sigma,(row,col,ch))
+      gauss = gauss.reshape(row,col,ch)
+      noisy = image + gauss
+      return noisy.astype('uint8')
+    #Salt and Pepper
+   elif noise_typ == 2:
+      row,col,ch = image.shape
+      s_vs_p = 0.5
+      amount = 0.004
+      out = np.copy(image)
+      # Salt mode
+      num_salt = np.ceil(amount * image.size * s_vs_p)
+      coords = [np.random.randint(i - 1,0, int(num_salt))
+              for i in image.shape]
+      out[coords] = 1
+      # Pepper mode
+      num_pepper = np.ceil(amount* image.size * (1. - s_vs_p))
+      coords = [np.random.randint( i - 1,0, int(num_pepper))
+              for i in image.shape]
+      out[coords] = 0
+      return out
+    #Poisson
+   elif noise_typ == 3:
+      vals = len(np.unique(image))
+      vals = 2 ** np.ceil(np.log2(vals))
+      noisy = np.random.poisson(image * vals) / float(vals)
+      return noisy
+    #speckle
+   elif noise_typ ==4:
+      row,col,ch = image.shape
+      gauss = np.random.randn(row,col,ch)
+      gauss = gauss.reshape(row,col,ch)        
+      noisy = image + image * gauss
+      return noisy.astype('uint8')
+
+def subsample(training_images,training_labels, ratio=0.8):
+    shuffle_index = np.random.permutation(len(training_labels))
+    training_images = training_images[shuffle_index]
+    training_labels = training_labels[shuffle_index]
+    sample = list()
+    sample_labels = list()
+    n_sample = round(training_images.shape[0] * ratio)
+    while len(sample) < n_sample:
+        index = randrange(training_images.shape[0])
+        sample.append(training_images[index,:,:,:])
+        sample_labels.append(training_labels[index])
+    return np.asarray(sample),np.asarray(sample_labels)
+
+def load_training_images(training_image_dir):
+
+    image_index = 0
+    
+    images = np.ndarray(shape=(500*200, 64,64,3))
+    names = []
+    labels = []                       
+    
+    # Loop through all the types directories
+    for type in os.listdir(training_image_dir):
+        if os.path.isdir(training_image_dir + type + '/images/'):
+            type_images = os.listdir(training_image_dir + type + '/images/')
+            # Loop through all the images of a type directory
+            #batch_index = 0;
+            #print ("Loading Class ", type)
+            for image in type_images:
+                image_file = os.path.join(training_image_dir, type + '/images/', image)
+
+                # reading the images as they are; no normalization, no color editing
+                image_data = np.asarray(Image.open(image_file),)
+                #print ('Loaded Image', image_file, image_data.shape)
+                if (image_data.shape == (64, 64, 3)):
+                    images[image_index, :,:,:] = image_data
+                    
+                    labels.append(type)
+                    names.append(image)
+                    
+                    image_index += 1
+                    #batch_index += 1
+                #if (batch_index >= batch_size):
+                 #   break;
+    labels = np.asarray(labels)
+    names = np.asarray(names)
+    return (images[0:len(labels)].astype('uint8'), labels, names)
+
+def rescale(img):
+    print(img)
+    img = Image.fromarray(img)
+    basewidth =299
+    wpercent = (basewidth / float(img.size[0]))
+    hsize = int((float(img.size[1]) * float(wpercent)))
+    img = img.resize((basewidth, hsize), PIL.Image.ANTIALIAS)
+    return img
+
+def load_val_images(val_image_dir):
+    image_index = 0
+    images = np.ndarray(shape=(500*20, 64,64,3))
+    names = []
+    labels = [] 
+    df = pd.read_csv(val_image_dir+'val_annotations.txt',header=None,sep='\t')
+    for image in os.listdir(val_image_dir+'/images/'):
+        image_file = os.path.join(val_image_dir+ '/images/', image)
+
+                # reading the images as they are; no normalization, no color editing
+        image_data = np.asarray(Image.open(image_file),)
+                #print ('Loaded Image', image_file, image_data.shape)
+        if (image_data.shape == (64, 64, 3)):
+            images[image_index, :,:,:] = image_data
+            names.append(image)
+            image_index += 1
+            labels.append(df[df[0] == image][1].values[0])
+    names = np.asarray(names)
+    labels =np.asarray(labels)
+    return (images[0:len(labels)].astype('uint8'), labels)
+
+def add_new_last_layer(base_model, nb_classes):
+  """Add last layer to the convnet
+  Args:
+    base_model: keras model excluding top
+    nb_classes: # of classes
+  Returns:
+    new keras model with last layer
+  """
+  x = base_model.output
+  x = GlobalAveragePooling2D()(x)
+  x = Dense(1024, activation='relu')(x) 
+  predictions = Dense(nb_classes, activation='softmax')(x) 
+  model = Model(input=base_model.input, output=predictions)
+  return model
+
+def setup_to_finetune(model):
+   """Freeze the bottom NB_IV3_LAYERS and retrain the remaining top 
+      layers.
+   note: NB_IV3_LAYERS corresponds to the top 2 inception blocks in 
+         the inceptionv3 architecture
+   Args:
+     model: keras model
+   """
+   NB_IV3_LAYERS_TO_FREEZE = 172
+   for layer in model.layers[:NB_IV3_LAYERS_TO_FREEZE]:
+      layer.trainable = False
+   for layer in model.layers[NB_IV3_LAYERS_TO_FREEZE:]:
+      layer.trainable = True
+   model.compile(optimizer=SGD(lr=0.001, momentum=0.9),   
+                 loss='categorical_crossentropy')
+
+def image_loader(batch_size,imgs,labels):
+    while True:
+        batch_start = 0
+        batch_end = batch_size
+        while batch_start < imgs.shape[0]:
+            limit = min(batch_end,imgs.shape[0])
+            x = imgs[batch_start:limit]
+            imgs_large = np.ndarray(shape= [x.shape[0],299,299,3])
+            for i in range(x.shape[0]):
+                imgs_large[i,:,:,:] = rescale(x[i])
+            imgs_large=imgs_large.astype('uint8')
+            imgs_noisy = np.ndarray(shape= imgs_large.shape)
+            for i in range(imgs_large.shape[0]):
+                imgs_noisy[i,:,:,:] = noisy(1,imgs_large[i])
+            imgs_noisy=imgs_noisy.astype('uint8')
+            x = imgs_noisy
+            y = labels[batch_start:limit]
+            #for i in y:
+            #    ind = all_labels.index(i)
+            #    ind_sub = list(y).index(i)
+            #    y[ind_sub] = ind
+            y = keras.utils.to_categorical(y, num_classes=201)
+            yield(x/255.,y)
+            batch_start+=batch_size
+            batch_end+=batch_size
+
+def image_loader_original(batch_size,imgs,labels):
+    while True:
+        batch_start = 0
+        batch_end = batch_size
+        while batch_start < imgs.shape[0]:
+            limit = min(batch_end,imgs.shape[0])
+            x = imgs[batch_start:limit]
+            imgs_large = np.ndarray(shape= [x.shape[0],299,299,3])
+            for i in range(x.shape[0]):
+                imgs_large[i,:,:,:] = rescale(x[i])
+            imgs_large=imgs_large.astype('uint8')
+            y = labels[batch_start:limit]
+            y = keras.utils.to_categorical(y, num_classes=201)
+            yield(x/255.,y)
+            batch_start+=batch_size
+            batch_end+=batch_size
